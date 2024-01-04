@@ -1,0 +1,66 @@
+version: '3'
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN}
+      - INITIAL_USER_EMAIL=${INITIAL_USER_EMAIL}
+      - INITIAL_USER_NAME=${INITIAL_USER_NAME}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    networks:
+      - network
+
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/front
+    environment:
+      - REACT_APP_BACKEND_URL=${BACKEND_URL}
+    ports:
+      - "3000:3000"
+    networks:
+      - network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - network
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - network
+
+volumes:
+  db-data:
+    driver: local
+
+networks:
+  network:
+    driver: bridge
