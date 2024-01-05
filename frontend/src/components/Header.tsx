@@ -1,6 +1,6 @@
 import React from "react";
 import {
-    Avatar,
+    Avatar, Box,
     Button,
     ButtonGroup,
     Flex,
@@ -24,6 +24,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({project_code, is_show_menu}) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
     const isActive = (path: string) => {
         if (path == '') {
             return location.pathname === `/${project_code}`
@@ -115,7 +116,11 @@ const Header: React.FC<HeaderProps> = ({project_code, is_show_menu}) => {
                     onClick={() => navigateToSetting()}
                 />
                 <Menu>
-                    <MenuButton as={Avatar} size="sm" />
+                    <MenuButton as={Box}>
+                        <Flex align="center">
+                            <Avatar name={user.name} size="sm" />
+                        </Flex>
+                    </MenuButton>
                     <MenuList>
                         <MenuItem onClick={() => navigateToUserAccounts()}>Account</MenuItem>
                         <MenuItem onClick={handleLogout}>Logout</MenuItem>

@@ -37,7 +37,6 @@ interface Project {
 }
 
 const Home: React.FC = () => {
-    const API_URL = process.env.REACT_APP_BACKEND_URL
     const [projects, setProjects] = useState<Project[]>([]);
     const {isOpen, onOpen, onClose} = useDisclosure();
     const [newProject, setNewProject] = useState({title: '', code: '', description: ''});

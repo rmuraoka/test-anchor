@@ -194,6 +194,13 @@ func (h *TestCaseHandler) PutTestCase(c *gin.Context) {
 		return
 	}
 
+	if updatedTestCase.MilestoneID == nil {
+		if result := h.DB.Model(&existingTestCase).Select("MilestoneID").Updates(updatedTestCase); result.Error != nil {
+			handleError(c, http.StatusInternalServerError, "Failed to update test case", result.Error)
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, createTestCaseResponse(existingTestCase))
 }
 

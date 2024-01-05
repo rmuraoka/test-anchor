@@ -166,7 +166,14 @@ func TestPutTestCase(t *testing.T) {
 	mock.ExpectExec("^UPDATE `test_cases`").
 		WithArgs(sqlmock.AnyArg(), "Updated Title", "Updated Content", id).
 		WillReturnResult(sqlmock.NewResult(1, 1))
+	// トランザクションのコミットを期待
+	mock.ExpectCommit()
 
+	mock.ExpectBegin()
+	// UPDATE クエリを期待
+	mock.ExpectExec("^UPDATE `test_cases`").
+		WithArgs(sqlmock.AnyArg(), nil, id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 	// トランザクションのコミットを期待
 	mock.ExpectCommit()
 

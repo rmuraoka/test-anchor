@@ -127,7 +127,6 @@ interface TestSuiteHeaderProps {
 }
 
 const TestPlan: React.FC = () => {
-    const API_URL = process.env.REACT_APP_BACKEND_URL
     const [projectId, setProjectId] = useState<number>(0);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const [testRuns, setTestRun] = useState<TestRun[]>([]);
@@ -155,6 +154,8 @@ const TestPlan: React.FC = () => {
     const [selectedTestCaseIds, setSelectedTestCaseIds] = useState<number[]>([]); // 選択されたテストケースのID
     const { t } = useTranslation();
     const apiRequest = useApiRequest();
+    const [selectedCount, setSelectedCount] = useState(0);
+    const isOverLimit = selectedCount > 10000;
 
     // APIからテストケースを取得
     const fetchTestRuns = async () => {
@@ -190,9 +191,11 @@ const TestPlan: React.FC = () => {
     const handleCheckboxChange = (testCaseId: number, isChecked: boolean) => {
         setSelectedTestCaseIds(prev => {
             if (isChecked) {
+                setSelectedCount(selectedCount + 1);
                 // チェックされた場合、IDを追加
                 return [...prev, testCaseId];
             } else {
+                setSelectedCount(selectedCount - 1);
                 // チェックが外れた場合、IDを削除
                 return prev.filter(id => id !== testCaseId);
             }
@@ -292,6 +295,7 @@ const TestPlan: React.FC = () => {
 
     const handleEditTestRun = (testRun: TestRun) => {
         setSelectedTestCaseIds(testRun.test_case_ids)
+        setSelectedCount(testRun.test_case_ids.length)
         setSelectedTestRun(testRun);
         onEditModalOpen();
     };
@@ -533,7 +537,17 @@ const TestPlan: React.FC = () => {
                         </Flex>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleUpdateButtonClick}>{t('update')}</Button>
+                        <Text fontSize="sm" color={isOverLimit ? "red.500" : "black"} mr={6}>
+                            {`${selectedCount}/10000`}
+                        </Text>
+                        <Button
+                            colorScheme="blue"
+                            mr={3}
+                            onClick={handleUpdateButtonClick}
+                            isDisabled={isOverLimit}
+                        >
+                            {t('update')}
+                        </Button>
                         <Button variant="ghost" onClick={onEditModalClose}>{t('cancel')}</Button>
                     </ModalFooter>
                 </ModalContent>
