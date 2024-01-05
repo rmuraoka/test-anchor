@@ -46,7 +46,6 @@ interface User {
 }
 
 const TestPlanList: React.FC = () => {
-    const API_URL = process.env.REACT_APP_BACKEND_URL
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const [projectId, setProjectId] = useState<number>(0);
     const [testPlans, setTestPlan] = useState<TestPlan[]>([]);

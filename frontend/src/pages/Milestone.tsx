@@ -40,7 +40,6 @@ interface Milestone {
 }
 
 const Milestone: React.FC = () => {
-    const API_URL = process.env.REACT_APP_BACKEND_URL
     const [projectId, setProjectId] = useState<number>(0);
     const [milestones, setMilestone] = useState<Milestone[]>([]);
     const {isOpen, onOpen, onClose} = useDisclosure();

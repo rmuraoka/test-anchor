@@ -20,7 +20,7 @@ import {
     ModalFooter,
     ModalHeader,
     ModalOverlay,
-    OrderedList,
+    OrderedList, Select,
     Table,
     Tbody,
     Td,
@@ -49,6 +49,9 @@ interface TestCase {
     content: string;
     created_by: { id: number; name: string; };
     updated_by: { id: number; name: string; };
+    milestone_id: number | null;
+    milestone: Milestone | null;
+    updated_by_id: number;
 }
 
 interface TestSuite {
@@ -77,8 +80,12 @@ interface NewTestSuite {
     name: string;
 }
 
+interface Milestone {
+    id: number;
+    title: string;
+}
+
 const CaseList: React.FC = () => {
-    const API_URL = process.env.REACT_APP_BACKEND_URL
     const {
         isOpen: isTestCaseAddModalOpen,
         onOpen: onTestCaseAddModalOpen,
@@ -110,6 +117,7 @@ const CaseList: React.FC = () => {
         parent_id: null,
         name: '',
     });
+    const [milestones, setMilestone] = useState<Milestone[]>([]);
     const toast = useToast();
     const {project_code} = useParams();
     const { t } = useTranslation();
@@ -128,8 +136,19 @@ const CaseList: React.FC = () => {
         }
     };
 
+    const fetchMilestones = async () => {
+        try {
+            const response = await apiRequest(`/protected/${project_code}/milestones`);
+            const data = await response.json();
+            setMilestone(data.entities)
+        } catch (error) {
+            console.error('Error fetching Milestones:', error);
+        }
+    };
+
     useEffect(() => {
         fetchTestCases();
+        fetchMilestones()
     }, [project_code]);
 
     const handleTestCaseClick = (testCase: TestCase) => {
@@ -139,10 +158,15 @@ const CaseList: React.FC = () => {
     const handleUpdateTestCase = async () => {
         if (selectedTestCase) {
             try {
+                selectedTestCase.updated_by_id = user.id;
                 const response = await apiRequest(`/protected/cases/${selectedTestCase.id}`, {
                     method: 'PUT',
                     body: JSON.stringify(selectedTestCase),
                 });
+
+                const updatedData = await response.json(); // 応答から最新のデータを取得
+                setSelectedTestCase(updatedData);
+
                 if (response.ok) {
                     toast({
                         title: t('test_case_updated'),
@@ -152,6 +176,7 @@ const CaseList: React.FC = () => {
                     });
                     setEditMode(false);
                     fetchTestCases();
+                    fetchMilestones();
                 } else {
                     throw new Error(t('failed_to_update_test_case'));
                 }
@@ -520,6 +545,23 @@ const CaseList: React.FC = () => {
                                             })}
                                         />
                                     </FormControl>
+                                    <FormControl>
+                                        <FormLabel>{t('milestone')}</FormLabel>
+                                        <Select
+                                            placeholder={t('select_milestone')}
+                                            onChange={(e) => setSelectedTestCase({
+                                                ...selectedTestCase,
+                                                milestone_id: parseInt(e.target.value, 10)
+                                            })}
+                                            value={selectedTestCase.milestone_id !== null ? selectedTestCase.milestone_id : ''}
+                                        >
+                                            {milestones.map((milestone) => (
+                                                <option key={milestone.id} value={milestone.id}>
+                                                    {milestone.title}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
                                     <ButtonGroup size="sm">
                                         <Button colorScheme="blue" onClick={handleUpdateTestCase}>{t('update')}</Button>
                                         <Button onClick={() => setEditMode(false)}>{t('cancel')}</Button>
@@ -530,7 +572,15 @@ const CaseList: React.FC = () => {
                                     <VStack align="start">
                                         <Flex justify="space-between">
                                             <Heading as="h3" size="md">{selectedTestCase.title}</Heading>
-                                            <Button size="sm" onClick={() => setEditMode(true)} ml={2}>{t('edit')}</Button>
+                                            <Button size="sm" onClick={() => {
+                                                if (selectedTestCase && selectedTestCase.milestone) {
+                                                    setSelectedTestCase({
+                                                        ...selectedTestCase,
+                                                        milestone_id: selectedTestCase.milestone.id
+                                                    });
+                                                }
+                                                setEditMode(true);
+                                            }} ml={2}>{t('edit')}</Button>
                                         </Flex>
                                     </VStack>
                                     <ReactMarkdown remarkPlugins={[gfm]} components={{
@@ -552,6 +602,11 @@ const CaseList: React.FC = () => {
                                     }}>
                                         {selectedTestCase?.content}
                                     </ReactMarkdown>
+                                    <Text fontSize="md" color="gray.600">
+                                        {`Milestone: ${
+                                            milestones.find(milestone => milestone.id === selectedTestCase.milestone?.id)?.title || 'None'
+                                        }`}
+                                    </Text>
                                 </>
                             )}
                         </VStack>

@@ -38,7 +38,6 @@ interface Member {
 }
 
 const SettingMembers: React.FC = () => {
-    const API_URL = process.env.REACT_APP_BACKEND_URL
     const [searchTerm, setSearchTerm] = useState('');
     const [members, setMembers] = useState<Member[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);

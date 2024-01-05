@@ -43,7 +43,6 @@ interface CardProps {
 }
 
 const ProjectHome: React.FC = () => {
-    const API_URL = process.env.REACT_APP_BACKEND_URL
     const [project, setProject] = useState<Project | null>(null);
     const {project_code} = useParams();
     const apiRequest = useApiRequest();
@@ -87,20 +86,31 @@ const ProjectHome: React.FC = () => {
                 <Header project_code={project_code} is_show_menu={true}/>
                 {/* 進捗状況ダッシュボード */}
                 <Box p={8} pt="6rem">
-                    <Heading as="h2" size="xl" mb={6}>Progress Dashboard</Heading>
-                    <SimpleGrid columns={2} spacing={4}>
-                        {/* 進行中のテストプランとマイルストーンの表示 */}
-                        {project?.test_plans.map(plan => (
-                            <Card key={plan.id} title={plan.title}>
-                                Status: {plan.status}
-                            </Card>
-                        ))}
-                        {project?.milestones.map(milestone => (
-                            <Card key={milestone.id} title={milestone.title}>
-                                Due Date: {milestone.due_date}
-                            </Card>
-                        ))}
-                    </SimpleGrid>
+                    <Heading as="h3" size="lg" mb={6}>Progress Dashboard</Heading>
+                    <Flex>
+                        {/* テストプランセクション */}
+                        <Box w="50%" pr={2}>
+                            <Heading as="h4" size="md" mb={4}>Test Plans</Heading>
+                            <SimpleGrid columns={1} spacing={4}>
+                                {project?.test_plans.map(plan => (
+                                    <Card key={plan.id} title={plan.title}>
+                                        Status: {plan.status}
+                                    </Card>
+                                ))}
+                            </SimpleGrid>
+                        </Box>
+                        {/* マイルストーンセクション */}
+                        <Box w="50%" pl={2}>
+                            <Heading as="h4" size="md" mb={4}>Milestones</Heading>
+                            <SimpleGrid columns={1} spacing={4}>
+                                {project?.milestones.map(milestone => (
+                                    <Card key={milestone.id} title={milestone.title}>
+                                        Due Date: {milestone.due_date}
+                                    </Card>
+                                ))}
+                            </SimpleGrid>
+                        </Box>
+                    </Flex>
                 </Box>
             </Flex>
         </ChakraProvider>
