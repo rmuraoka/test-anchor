@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
     Box,
     Button,
@@ -7,7 +7,7 @@ import {
     Flex,
     FormControl,
     FormLabel,
-    Heading,
+    Heading, HStack,
     Icon,
     IconButton,
     Input,
@@ -20,7 +20,8 @@ import {
     ModalFooter,
     ModalHeader,
     ModalOverlay,
-    OrderedList, Select,
+    OrderedList,
+    Select,
     Table,
     Tbody,
     Td,
@@ -32,7 +33,7 @@ import {
     useToast,
     VStack
 } from '@chakra-ui/react';
-import {DeleteIcon} from '@chakra-ui/icons';
+import {DeleteIcon, DragHandleIcon} from '@chakra-ui/icons';
 import {SlFolder} from "react-icons/sl";
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
@@ -42,6 +43,8 @@ import {useParams} from "react-router-dom";
 import Header from "../components/Header";
 import {useTranslation} from "react-i18next";
 import {useApiRequest} from "../components/UseApiRequest";
+import {DndProvider, useDrag, useDrop} from 'react-dnd';
+import {HTML5Backend} from 'react-dnd-html5-backend';
 
 interface TestCase {
     id: number;
@@ -85,6 +88,166 @@ interface Milestone {
     title: string;
 }
 
+interface DraggableTestCaseProps {
+    testCase: TestCase;
+    onMove: (testCaseId: number, targetTestSuiteId: number) => void;
+}
+
+interface DroppableTestSuiteProps {
+    testSuite: TestSuite;
+    onDrop: (testCaseId: number, targetTestSuiteId: number) => void;
+    children: React.ReactNode;
+}
+
+interface DragItem {
+    type: string;
+    id: number;
+    key: number;
+}
+
+interface TreeDataItem {
+    title: React.ReactNode;
+    key: number;
+    children?: TreeDataItem[];
+}
+
+interface DroppableTreeNodeProps {
+    node: TreeDataItem;
+    onDropTestCase: (item: DragItem, nodeKey: number) => void;
+    onDropTestSuite: (item: DragItem, nodeKey: number) => void;
+}
+
+interface DroppableTreeProps {
+    treeData: TreeDataItem[];
+    onDropTestCase: (item: DragItem, nodeKey: number) => void;
+    onDropTestSuite: (item: DragItem, nodeKey: number) => void;
+}
+
+interface TreeNodeProps {
+    nodeData: TreeDataItem;
+    onDropTestCase: (item: DragItem, nodeKey: number) => void;
+    onDropTestSuite: (item: DragItem, nodeKey: number) => void
+}
+
+const DraggableTestCase: React.FC<DraggableTestCaseProps> = ({testCase, onMove}) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const [{ isDragging }, drag, preview] = useDrag(() => ({
+        type: 'TEST_CASE',
+        item: {type: 'TEST_CASE', id: testCase.id},
+        collect: monitor => ({
+            isDragging: monitor.isDragging(),
+        }),
+    }));
+
+    drag(preview(ref));
+
+    return (
+        <Box ref={ref} p={1} my={1} bg={isDragging ? "gray.100" : ""} borderRadius="md" opacity={isDragging ? 0.5 : 1}>
+            <HStack>
+                <DragHandleIcon mr={2}/>
+                <Text>{testCase.title}</Text>
+            </HStack>
+        </Box>
+    );
+};
+
+const DroppableTestSuite: React.FC<DroppableTestSuiteProps> = ({ testSuite, onDrop, children }) => {
+    const [{ isOver }, drop] = useDrop({
+        accept: 'TEST_CASE',
+        drop: (item: DragItem, monitor) => {
+            if (monitor.isOver({ shallow: true })) {
+                onDrop(item.id, testSuite.id);
+            }
+        },
+        collect: monitor => ({
+            isOver: monitor.isOver({ shallow: true }),
+        }),
+    });
+
+    // ドラッグ中に適用するスタイル
+    const style = useMemo(() => ({
+        // TODO テーマから色を取得できるようにする
+        backgroundColor: isOver ? '#BEE3F8' : 'white',
+    }), [isOver]);
+
+    return (
+        <div ref={drop} style={style}>
+            {children}
+        </div>
+    );
+};
+
+const DroppableTreeNode: React.FC<DroppableTreeNodeProps> = ({ node, onDropTestCase, onDropTestSuite }) => {
+    const [, drop] = useDrop({
+        accept: ['TEST_CASE', 'TEST_SUITE'],
+        drop: (item: DragItem, monitor) => {
+            if (item.type === 'TEST_CASE') {
+                console.log("hoge??");
+                onDropTestCase(item, node.key);
+            } else if (item.type === 'TEST_SUITE') {
+                onDropTestSuite(item, node.key);
+            }
+        },
+    });
+
+    return (
+        <div ref={drop}>
+            {node.title}
+            {node.children && node.children.map(childNode => (
+                <DroppableTreeNode key={childNode.key} node={childNode} onDropTestCase={onDropTestCase} onDropTestSuite={onDropTestSuite} />
+            ))}
+        </div>
+    );
+};
+
+const TreeNode: React.FC<TreeNodeProps> = ({ nodeData, onDropTestCase, onDropTestSuite }) => {
+    const [{ isDragging }, drag] = useDrag({
+        type: 'TEST_SUITE',
+        item: {type: 'TEST_SUITE', key: nodeData.key },
+        collect: monitor => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+
+    const [{ isOver }, drop] = useDrop({
+        accept: ['TEST_CASE', 'TEST_SUITE'],
+        drop: (item: DragItem, monitor) => {
+            if (!monitor.didDrop()) {
+                if (item.type === 'TEST_CASE') {
+                    onDropTestCase(item, nodeData.key);
+                } else if (item.type === 'TEST_SUITE') {
+                    onDropTestSuite(item, nodeData.key);
+                }
+            }
+        },
+        collect: monitor => ({
+            isOver: monitor.isOver({shallow: true}),
+        }),
+    });
+
+    const style = useMemo(() => ({
+        backgroundColor: isOver ? '#BEE3F8' : isDragging ? '#F7FAFC' : 'white',
+        // 他のスタイル設定
+    }), [isOver, isDragging]);
+
+    return (
+        <div ref={(node) => drag(drop(node))} style={style}>
+            {nodeData.title}
+        </div>
+    );
+};
+
+const DroppableTree: React.FC<DroppableTreeProps> = ({ treeData, onDropTestCase, onDropTestSuite }) => {
+    return (
+        <Tree
+            showLine
+            defaultExpandAll
+            treeData={treeData}
+            titleRender={(nodeData) => <TreeNode nodeData={nodeData} onDropTestCase={onDropTestCase} onDropTestSuite={onDropTestSuite} />}
+        />
+    );
+};
+
 const CaseList: React.FC = () => {
     const {
         isOpen: isTestCaseAddModalOpen,
@@ -120,8 +283,65 @@ const CaseList: React.FC = () => {
     const [milestones, setMilestone] = useState<Milestone[]>([]);
     const toast = useToast();
     const {project_code} = useParams();
-    const { t } = useTranslation();
+    const {t} = useTranslation();
     const apiRequest = useApiRequest();
+    const onMoveTestCase = async (testCaseId: number, targetTestSuiteId: number) => {
+        try {
+            const response = await apiRequest(`/protected/cases/${testCaseId}`, {
+                method: 'PUT',
+                body: JSON.stringify({test_suite_id: targetTestSuiteId}),
+            });
+
+            if (response.ok) {
+                setEditMode(false);
+                fetchTestCases();
+                fetchMilestones();
+            } else {
+                throw new Error(t('failed_to_update_test_case'));
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const onMoveTestSuite = async (testSuiteId: number, targetTestSuiteId: number) => {
+        try {
+            const response = await apiRequest(`/protected/suites/${testSuiteId}`, {
+                method: 'PUT',
+                body: JSON.stringify({parent_id: targetTestSuiteId}),
+            });
+
+            if (response.ok) {
+                setEditMode(false);
+                fetchTestCases();
+                fetchMilestones();
+            } else {
+                throw new Error(t('failed_to_update_test_case')); // TODO テストスイート用の文言に変える
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
 
     // APIからテストケースを取得
     const fetchTestCases = async () => {
@@ -294,14 +514,6 @@ const CaseList: React.FC = () => {
             });
             // レスポンスがOKの場合、状態を更新してリストから削除
             if (response.ok) {
-                setTestSuites(prevSuites => {
-                    // 削除するテストケースを除外した新しいテストスイートのリストを作成
-                    return prevSuites.map(suite => ({
-                        ...suite,
-                        test_cases: suite.test_cases?.filter(testCase => testCase.id !== id),
-                    }));
-                });
-
                 // ユーザーに削除が成功したことを通知
                 toast({
                     title: t('test_case_deleted'),
@@ -309,6 +521,8 @@ const CaseList: React.FC = () => {
                     duration: 5000,
                     isClosable: true,
                 });
+                fetchTestCases();
+                fetchMilestones();
             } else {
                 // レスポンスがOKでない場合、エラーをスロー
                 throw new Error(t('failed_to_delete_test_case'));
@@ -338,7 +552,9 @@ const CaseList: React.FC = () => {
             <Tbody>
                 {testCases.map(testCase => (
                     <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testCase)}>
-                        <Td borderBottom="1px" borderColor="gray.200">{testCase.title}</Td>
+                        <Td borderBottom="1px" borderColor="gray.200">
+                            <DraggableTestCase testCase={testCase} onMove={onMoveTestCase}/>
+                        </Td>
                         <Td textAlign="right">
                             <IconButton
                                 aria-label="Delete test case"
@@ -385,235 +601,251 @@ const CaseList: React.FC = () => {
         );
     };
 
+    const handleTestCaseDropOnTree = (item: DragItem, targetNodeKey: number) => {
+        const testCaseId = item.id;
+        onMoveTestCase(testCaseId, targetNodeKey);
+    };
+
+    const handleTestSuiteDropOnTree = (item: DragItem, targetNodeKey: number) => {
+        const testSuiteId = item.key;
+        onMoveTestSuite(testSuiteId, targetNodeKey);
+    };
+
     const renderTestSuites = (suites: TestSuite[], level = 0) => (
         suites.map(suite => (
-            <Box key={suite.name} mb={4} pl={`${level * 2}em`}>
-                <TestSuiteHeader
-                    title={suite.name}
-                    testSuiteId={suite.id} // TestSuiteのIDを渡す
-                    onAddCase={(id) => {
-                        setNewTestCase({...newTestCase, test_suite_id: id}); // テストスイートのIDを新しいテストケースのステートに設定
-                        onTestCaseAddModalOpen();
-                    }}
-                    onAddSuite={(id) => {
-                        setNewTestSuite({...newTestSuite, parent_id: id}); // テストスイートのIDを新しいテストケースのステートに設定
-                        onTestSuiteAddModalOpen();
-                    }}
-                />
-                <Box mb={4}>
-                    {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases)}
+            <DroppableTestSuite key={suite.id} testSuite={suite} onDrop={onMoveTestCase}>
+                <Box mb={4} pl={`${level * 2}em`}>
+                    <TestSuiteHeader
+                        title={suite.name}
+                        testSuiteId={suite.id}
+                        onAddCase={(id) => {
+                            setNewTestCase({...newTestCase, test_suite_id: id});
+                            onTestCaseAddModalOpen();
+                        }}
+                        onAddSuite={(id) => {
+                            setNewTestSuite({...newTestSuite, parent_id: id});
+                            onTestSuiteAddModalOpen();
+                        }}
+                    />
+                    <Box mb={4}>
+                        {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases)}
+                    </Box>
+                    {/* 再帰的に子のTestSuiteをレンダリング */}
+                    {suite.test_suites && suite.test_suites.length > 0 && (
+                        <Box>
+                            {renderTestSuites(suite.test_suites, level + 1)}
+                        </Box>
+                    )}
                 </Box>
-                {suite.test_suites && suite.test_suites.length > 0 && renderTestSuites(suite.test_suites, level + 1)}
-            </Box>
+            </DroppableTestSuite>
         ))
     );
 
     return (
-        <ChakraProvider>
-            <Header project_code={project_code} is_show_menu={true}/>
-            <Flex h="100vh">
-                <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
-                    <Tree
-                        showLine
-                        defaultExpandAll
-                        treeData={onlyTestSuites}
-                    />
-                </Box>
-                <Box w="50%" p={5} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
-                    <Box p={5}>
-                        <IconButton
-                            aria-label={t('add_test_suite')}
-                            icon={<PiFolderSimplePlus/>}
-                            colorScheme="gray"
-                            size="sm"
-                            ml={2}
-                            onClick={() => {
-                                setNewTestSuite({
-                                    project_id: projectId,
-                                    parent_id: null,
-                                    name: ''
-                                });
-                                onTestSuiteAddModalOpen(); // モーダルを開く
-                            }}
-                            mb={2}
-                        />
-                        {renderTestSuites(testSuites)}
-                        <Modal isOpen={isTestCaseAddModalOpen} onClose={onTestCaseAddModalClose}>
-                            <ModalOverlay/>
-                            <ModalContent>
-                                <ModalCloseButton/>
-                                <ModalHeader>{t('add_new_test_case')}</ModalHeader>
-                                <ModalBody>
-                                    <VStack spacing={4}>
+        <DndProvider backend={HTML5Backend}>
+            <ChakraProvider>
+                <Header project_code={project_code} is_show_menu={true}/>
+                <Flex h="100vh">
+                    <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
+                        <DroppableTree treeData={onlyTestSuites} onDropTestCase={handleTestCaseDropOnTree} onDropTestSuite={handleTestSuiteDropOnTree} />
+                    </Box>
+                    <Box w="50%" p={5} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
+                        <Box p={5}>
+                            <IconButton
+                                aria-label={t('add_test_suite')}
+                                icon={<PiFolderSimplePlus/>}
+                                colorScheme="gray"
+                                size="sm"
+                                ml={2}
+                                onClick={() => {
+                                    setNewTestSuite({
+                                        project_id: projectId,
+                                        parent_id: null,
+                                        name: ''
+                                    });
+                                    onTestSuiteAddModalOpen(); // モーダルを開く
+                                }}
+                                mb={2}
+                            />
+                            {renderTestSuites(testSuites)}
+                            <Modal isOpen={isTestCaseAddModalOpen} onClose={onTestCaseAddModalClose}>
+                                <ModalOverlay/>
+                                <ModalContent>
+                                    <ModalCloseButton/>
+                                    <ModalHeader>{t('add_new_test_case')}</ModalHeader>
+                                    <ModalBody>
+                                        <VStack spacing={4}>
+                                            <FormControl>
+                                                <FormLabel>{t('title')}</FormLabel>
+                                                <Input value={newTestCase.title}
+                                                       onChange={(e) => setNewTestCase({
+                                                           ...newTestCase,
+                                                           title: e.target.value
+                                                       })}/>
+                                            </FormControl>
+                                            <FormControl>
+                                                <FormLabel>{t('content')}</FormLabel>
+                                                <Textarea value={newTestCase.content}
+                                                          height={200}
+                                                          onChange={(e) => setNewTestCase({
+                                                              ...newTestCase,
+                                                              content: e.target.value
+                                                          })}/>
+                                            </FormControl>
+                                        </VStack>
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button variant="outline" mr={3} onClick={onTestCaseAddModalClose}>
+                                            {t('cancel')}
+                                        </Button>
+                                        <Button colorScheme="blue" onClick={handleAddTestCase}>
+                                            {t('add')}
+                                        </Button>
+                                    </ModalFooter>
+                                </ModalContent>
+                            </Modal>
+                            <Modal isOpen={isTestSuiteAddModalOpen} onClose={onTestSuiteAddModalClose}>
+                                <ModalOverlay/>
+                                <ModalContent>
+                                    <ModalHeader>{t('add_new_test_suite')}</ModalHeader>
+                                    <ModalCloseButton/>
+                                    <ModalBody>
+                                        <FormControl>
+                                            <FormLabel>{t('name')}</FormLabel>
+                                            <Input value={newTestSuite.name}
+                                                   onChange={(e) => setNewTestSuite({
+                                                       ...newTestSuite,
+                                                       name: e.target.value
+                                                   })}/>
+                                        </FormControl>
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button colorScheme="blue" mr={3} onClick={handleAddTestSuite}>
+                                            {t('add')}
+                                        </Button>
+                                        <Button onClick={onTestSuiteAddModalClose}>{t('cancel')}</Button>
+                                    </ModalFooter>
+                                </ModalContent>
+                            </Modal>
+                            <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
+                                <ModalOverlay/>
+                                <ModalContent>
+                                    <ModalHeader>{t('delete_test_case')}</ModalHeader>
+                                    <ModalCloseButton/>
+                                    <ModalBody>
+                                        <Text>{t('confirm_delete')}</Text>
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button colorScheme="red" onClick={() => {
+                                            if (deletingTestCaseId) handleDeleteTestCase(deletingTestCaseId);
+                                            onDeleteModalClose();
+                                        }}>
+                                            {t('delete')}
+                                        </Button>
+                                        <Button ml={2} onClick={onDeleteModalClose}>{t('cancel')}</Button>
+                                    </ModalFooter>
+                                </ModalContent>
+                            </Modal>
+                        </Box>
+                    </Box>
+                    <Box w="30%" p={5} pt="6rem">
+                        {selectedTestCase && (
+                            <VStack align="start">
+                                {editMode ? (
+                                    // 編集フォームを表示
+                                    <>
                                         <FormControl>
                                             <FormLabel>{t('title')}</FormLabel>
-                                            <Input value={newTestCase.title}
-                                                   onChange={(e) => setNewTestCase({
-                                                       ...newTestCase,
-                                                       title: e.target.value
-                                                   })}/>
+                                            <Input
+                                                value={selectedTestCase?.title}
+                                                onChange={(e) => setSelectedTestCase({
+                                                    ...selectedTestCase,
+                                                    title: e.target.value
+                                                })}
+                                            />
                                         </FormControl>
                                         <FormControl>
                                             <FormLabel>{t('content')}</FormLabel>
-                                            <Textarea value={newTestCase.content}
-                                                      height={200}
-                                                      onChange={(e) => setNewTestCase({
-                                                          ...newTestCase,
-                                                          content: e.target.value
-                                                      })}/>
+                                            <Textarea
+                                                height={200}
+                                                value={selectedTestCase?.content}
+                                                onChange={(e) => setSelectedTestCase({
+                                                    ...selectedTestCase,
+                                                    content: e.target.value
+                                                })}
+                                            />
                                         </FormControl>
-                                    </VStack>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button variant="outline" mr={3} onClick={onTestCaseAddModalClose}>
-                                        {t('cancel')}
-                                    </Button>
-                                    <Button colorScheme="blue" onClick={handleAddTestCase}>
-                                        {t('add')}
-                                    </Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
-                        <Modal isOpen={isTestSuiteAddModalOpen} onClose={onTestSuiteAddModalClose}>
-                            <ModalOverlay/>
-                            <ModalContent>
-                                <ModalHeader>{t('add_new_test_suite')}</ModalHeader>
-                                <ModalCloseButton/>
-                                <ModalBody>
-                                    <FormControl>
-                                        <FormLabel>{t('name')}</FormLabel>
-                                        <Input value={newTestSuite.name}
-                                               onChange={(e) => setNewTestSuite({
-                                                   ...newTestSuite,
-                                                   name: e.target.value
-                                               })}/>
-                                    </FormControl>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button colorScheme="blue" mr={3} onClick={handleAddTestSuite}>
-                                        {t('add')}
-                                    </Button>
-                                    <Button onClick={onTestSuiteAddModalClose}>{t('cancel')}</Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
-                        <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
-                            <ModalOverlay/>
-                            <ModalContent>
-                                <ModalHeader>{t('delete_test_case')}</ModalHeader>
-                                <ModalCloseButton/>
-                                <ModalBody>
-                                    <Text>{t('confirm_delete')}</Text>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button colorScheme="red" onClick={() => {
-                                        if (deletingTestCaseId) handleDeleteTestCase(deletingTestCaseId);
-                                        onDeleteModalClose();
-                                    }}>
-                                        {t('delete')}
-                                    </Button>
-                                    <Button ml={2} onClick={onDeleteModalClose}>{t('cancel')}</Button>
-                                </ModalFooter>
-                            </ModalContent>
-                        </Modal>
+                                        <FormControl>
+                                            <FormLabel>{t('milestone')}</FormLabel>
+                                            <Select
+                                                placeholder={t('select_milestone')}
+                                                onChange={(e) => setSelectedTestCase({
+                                                    ...selectedTestCase,
+                                                    milestone_id: parseInt(e.target.value, 10)
+                                                })}
+                                                value={selectedTestCase.milestone_id !== null ? selectedTestCase.milestone_id : ''}
+                                            >
+                                                {milestones.map((milestone) => (
+                                                    <option key={milestone.id} value={milestone.id}>
+                                                        {milestone.title}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                        <ButtonGroup size="sm">
+                                            <Button colorScheme="blue"
+                                                    onClick={handleUpdateTestCase}>{t('update')}</Button>
+                                            <Button onClick={() => setEditMode(false)}>{t('cancel')}</Button>
+                                        </ButtonGroup>
+                                    </>
+                                ) : (
+                                    <>
+                                        <VStack align="start">
+                                            <Flex justify="space-between">
+                                                <Heading as="h3" size="md">{selectedTestCase.title}</Heading>
+                                                <Button size="sm" onClick={() => {
+                                                    if (selectedTestCase && selectedTestCase.milestone) {
+                                                        setSelectedTestCase({
+                                                            ...selectedTestCase,
+                                                            milestone_id: selectedTestCase.milestone.id
+                                                        });
+                                                    }
+                                                    setEditMode(true);
+                                                }} ml={2}>{t('edit')}</Button>
+                                            </Flex>
+                                        </VStack>
+                                        <ReactMarkdown remarkPlugins={[gfm]} components={{
+                                            h1: ({node, ...props}) => <Heading as="h1" size="xl" mt={6}
+                                                                               mb={4} {...props} />,
+                                            h2: ({node, ...props}) => <Heading as="h2" size="lg" mt={5}
+                                                                               mb={3} {...props} />,
+                                            h3: ({node, ...props}) => <Heading as="h3" size="md" mt={4}
+                                                                               mb={2} {...props} />,
+                                            h4: ({node, ...props}) => <Heading as="h4" size="sm" mt={3}
+                                                                               mb={1} {...props} />,
+                                            p: ({node, ...props}) => <Text mt={2} mb={2} {...props} />,
+                                            a: ({node, ...props}) => <Link color="teal.500" isExternal {...props} />,
+                                            ul: ({node, ...props}) => <UnorderedList mt={2} mb={2} {...props} />,
+                                            ol: ({node, ...props}) => <OrderedList mt={2} mb={2} {...props} />,
+                                            li: ({node, ...props}) => <ListItem {...props} />,
+                                            em: ({node, ...props}) => <Text as="em" {...props} />,
+                                            strong: ({node, ...props}) => <Text as="strong" {...props} />,
+                                        }}>
+                                            {selectedTestCase?.content}
+                                        </ReactMarkdown>
+                                        <Text fontSize="md" color="gray.600">
+                                            {`Milestone: ${
+                                                milestones.find(milestone => milestone.id === selectedTestCase.milestone?.id)?.title || 'None'
+                                            }`}
+                                        </Text>
+                                    </>
+                                )}
+                            </VStack>
+                        )}
                     </Box>
-                </Box>
-                <Box w="30%" p={5} pt="6rem">
-                    {selectedTestCase && (
-                        <VStack align="start">
-                            {editMode ? (
-                                // 編集フォームを表示
-                                <>
-                                    <FormControl>
-                                        <FormLabel>{t('title')}</FormLabel>
-                                        <Input
-                                            value={selectedTestCase?.title}
-                                            onChange={(e) => setSelectedTestCase({
-                                                ...selectedTestCase,
-                                                title: e.target.value
-                                            })}
-                                        />
-                                    </FormControl>
-                                    <FormControl>
-                                        <FormLabel>{t('content')}</FormLabel>
-                                        <Textarea
-                                            height={200}
-                                            value={selectedTestCase?.content}
-                                            onChange={(e) => setSelectedTestCase({
-                                                ...selectedTestCase,
-                                                content: e.target.value
-                                            })}
-                                        />
-                                    </FormControl>
-                                    <FormControl>
-                                        <FormLabel>{t('milestone')}</FormLabel>
-                                        <Select
-                                            placeholder={t('select_milestone')}
-                                            onChange={(e) => setSelectedTestCase({
-                                                ...selectedTestCase,
-                                                milestone_id: parseInt(e.target.value, 10)
-                                            })}
-                                            value={selectedTestCase.milestone_id !== null ? selectedTestCase.milestone_id : ''}
-                                        >
-                                            {milestones.map((milestone) => (
-                                                <option key={milestone.id} value={milestone.id}>
-                                                    {milestone.title}
-                                                </option>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
-                                    <ButtonGroup size="sm">
-                                        <Button colorScheme="blue" onClick={handleUpdateTestCase}>{t('update')}</Button>
-                                        <Button onClick={() => setEditMode(false)}>{t('cancel')}</Button>
-                                    </ButtonGroup>
-                                </>
-                            ) : (
-                                <>
-                                    <VStack align="start">
-                                        <Flex justify="space-between">
-                                            <Heading as="h3" size="md">{selectedTestCase.title}</Heading>
-                                            <Button size="sm" onClick={() => {
-                                                if (selectedTestCase && selectedTestCase.milestone) {
-                                                    setSelectedTestCase({
-                                                        ...selectedTestCase,
-                                                        milestone_id: selectedTestCase.milestone.id
-                                                    });
-                                                }
-                                                setEditMode(true);
-                                            }} ml={2}>{t('edit')}</Button>
-                                        </Flex>
-                                    </VStack>
-                                    <ReactMarkdown remarkPlugins={[gfm]} components={{
-                                        h1: ({node, ...props}) => <Heading as="h1" size="xl" mt={6}
-                                                                           mb={4} {...props} />,
-                                        h2: ({node, ...props}) => <Heading as="h2" size="lg" mt={5}
-                                                                           mb={3} {...props} />,
-                                        h3: ({node, ...props}) => <Heading as="h3" size="md" mt={4}
-                                                                           mb={2} {...props} />,
-                                        h4: ({node, ...props}) => <Heading as="h4" size="sm" mt={3}
-                                                                           mb={1} {...props} />,
-                                        p: ({node, ...props}) => <Text mt={2} mb={2} {...props} />,
-                                        a: ({node, ...props}) => <Link color="teal.500" isExternal {...props} />,
-                                        ul: ({node, ...props}) => <UnorderedList mt={2} mb={2} {...props} />,
-                                        ol: ({node, ...props}) => <OrderedList mt={2} mb={2} {...props} />,
-                                        li: ({node, ...props}) => <ListItem {...props} />,
-                                        em: ({node, ...props}) => <Text as="em" {...props} />,
-                                        strong: ({node, ...props}) => <Text as="strong" {...props} />,
-                                    }}>
-                                        {selectedTestCase?.content}
-                                    </ReactMarkdown>
-                                    <Text fontSize="md" color="gray.600">
-                                        {`Milestone: ${
-                                            milestones.find(milestone => milestone.id === selectedTestCase.milestone?.id)?.title || 'None'
-                                        }`}
-                                    </Text>
-                                </>
-                            )}
-                        </VStack>
-                    )}
-                </Box>
-            </Flex>
-        </ChakraProvider>
+                </Flex>
+            </ChakraProvider>
+        </DndProvider>
     );
 };
 
