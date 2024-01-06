@@ -183,16 +183,6 @@ const CaseList: React.FC = () => {
             collect: monitor => ({
                 isDragging: monitor.isDragging(),
             }),
-            // end: (item, monitor) => {
-            //     const dropResult = monitor.getDropResult() as DragItem;
-            //     if (item && dropResult) {
-            //         const dragIndex = item.index;
-            //         const hoverIndex = dropResult.index;
-            //         if (dragIndex !== hoverIndex) {
-            //             // onMove(dragIndex, hoverIndex);
-            //         }
-            //     }
-            // },
         }));
 
         const [, drop] = useDrop({
@@ -217,7 +207,6 @@ const CaseList: React.FC = () => {
                     setHoverPosition('lower')
                 }
                 setHoverIndex(index);
-                setHoverSuiteId(testSuiteId);
             },
         });
 
@@ -243,6 +232,9 @@ const CaseList: React.FC = () => {
                     onDrop(item.testCase, testSuite);
                 }
                 return {...item, index: item.index}
+            },
+            hover: () => {
+                setHoverSuiteId(testSuite.id);
             },
             collect: monitor => ({
                 isOver: monitor.isOver({shallow: true}),
@@ -678,7 +670,7 @@ const CaseList: React.FC = () => {
                     <React.Fragment key={testCase.id}>
                         {hoverIndex === index && hoverPosition === 'upper' && hoverSuiteId === testSuiteId && (
                             <Tr>
-                                <Td colSpan={100} style={{height: '2px', backgroundColor: '#EDF2F7'}}/>
+                                <Td colSpan={100} backgroundColor="gray.100" />
                             </Tr>
                         )}
                         <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}
@@ -700,7 +692,7 @@ const CaseList: React.FC = () => {
                         </Tr>
                         {hoverIndex === index && hoverPosition === 'lower' && hoverSuiteId === testSuiteId && (
                             <Tr>
-                                <Td colSpan={100} style={{height: '2px', backgroundColor: '#EDF2F7'}}/>
+                                <Td colSpan={100} backgroundColor="gray.100" />
                             </Tr>
                         )}
                     </React.Fragment>
@@ -765,6 +757,9 @@ const CaseList: React.FC = () => {
                         }}
                     />
                     <Box mb={4}>
+                        {hoverSuiteId === suite.id && suite.test_cases?.length === 0 && (
+                            <Box height="30px" backgroundColor="gray.100" />
+                        )}
                         {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases, suite.id)}
                     </Box>
                     {/* 再帰的に子のTestSuiteをレンダリング */}
