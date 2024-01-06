@@ -9,4 +9,5 @@ type TestSuite struct {
 	TestSuites []TestSuite `gorm:"foreignKey:ParentID;references:ID"`
 	Name       string      `json:"name"`      // フォルダーの名前
 	ParentID   *uint       `json:"parent_id"` // 親フォルダーのID（ルートフォルダーの場合はnil）
+	OrderIndex int         `json:"order_index"`
 }

@@ -7,7 +7,8 @@ import {
     Flex,
     FormControl,
     FormLabel,
-    Heading, HStack,
+    Heading,
+    HStack,
     Icon,
     IconButton,
     Input,
@@ -90,12 +91,13 @@ interface Milestone {
 
 interface DraggableTestCaseProps {
     testCase: TestCase;
-    onMove: (testCaseId: number, targetTestSuiteId: number) => void;
+    index: number;
+    testSuiteId: number;
 }
 
 interface DroppableTestSuiteProps {
     testSuite: TestSuite;
-    onDrop: (testCaseId: number, targetTestSuiteId: number) => void;
+    onDrop: (testCase: TestCase, testSuite: TestSuite) => void;
     children: React.ReactNode;
 }
 
@@ -103,6 +105,8 @@ interface DragItem {
     type: string;
     id: number;
     key: number;
+    index: number;
+    testCase: TestCase;
 }
 
 interface TreeDataItem {
@@ -128,125 +132,6 @@ interface TreeNodeProps {
     onDropTestCase: (item: DragItem, nodeKey: number) => void;
     onDropTestSuite: (item: DragItem, nodeKey: number) => void
 }
-
-const DraggableTestCase: React.FC<DraggableTestCaseProps> = ({testCase, onMove}) => {
-    const ref = useRef<HTMLDivElement>(null);
-    const [{ isDragging }, drag, preview] = useDrag(() => ({
-        type: 'TEST_CASE',
-        item: {type: 'TEST_CASE', id: testCase.id},
-        collect: monitor => ({
-            isDragging: monitor.isDragging(),
-        }),
-    }));
-
-    drag(preview(ref));
-
-    return (
-        <Box ref={ref} p={1} my={1} bg={isDragging ? "gray.100" : ""} borderRadius="md" opacity={isDragging ? 0.5 : 1}>
-            <HStack>
-                <DragHandleIcon mr={2}/>
-                <Text>{testCase.title}</Text>
-            </HStack>
-        </Box>
-    );
-};
-
-const DroppableTestSuite: React.FC<DroppableTestSuiteProps> = ({ testSuite, onDrop, children }) => {
-    const [{ isOver }, drop] = useDrop({
-        accept: 'TEST_CASE',
-        drop: (item: DragItem, monitor) => {
-            if (monitor.isOver({ shallow: true })) {
-                onDrop(item.id, testSuite.id);
-            }
-        },
-        collect: monitor => ({
-            isOver: monitor.isOver({ shallow: true }),
-        }),
-    });
-
-    // ドラッグ中に適用するスタイル
-    const style = useMemo(() => ({
-        // TODO テーマから色を取得できるようにする
-        backgroundColor: isOver ? '#BEE3F8' : 'white',
-    }), [isOver]);
-
-    return (
-        <div ref={drop} style={style}>
-            {children}
-        </div>
-    );
-};
-
-const DroppableTreeNode: React.FC<DroppableTreeNodeProps> = ({ node, onDropTestCase, onDropTestSuite }) => {
-    const [, drop] = useDrop({
-        accept: ['TEST_CASE', 'TEST_SUITE'],
-        drop: (item: DragItem, monitor) => {
-            if (item.type === 'TEST_CASE') {
-                console.log("hoge??");
-                onDropTestCase(item, node.key);
-            } else if (item.type === 'TEST_SUITE') {
-                onDropTestSuite(item, node.key);
-            }
-        },
-    });
-
-    return (
-        <div ref={drop}>
-            {node.title}
-            {node.children && node.children.map(childNode => (
-                <DroppableTreeNode key={childNode.key} node={childNode} onDropTestCase={onDropTestCase} onDropTestSuite={onDropTestSuite} />
-            ))}
-        </div>
-    );
-};
-
-const TreeNode: React.FC<TreeNodeProps> = ({ nodeData, onDropTestCase, onDropTestSuite }) => {
-    const [{ isDragging }, drag] = useDrag({
-        type: 'TEST_SUITE',
-        item: {type: 'TEST_SUITE', key: nodeData.key },
-        collect: monitor => ({
-            isDragging: monitor.isDragging(),
-        }),
-    });
-
-    const [{ isOver }, drop] = useDrop({
-        accept: ['TEST_CASE', 'TEST_SUITE'],
-        drop: (item: DragItem, monitor) => {
-            if (!monitor.didDrop()) {
-                if (item.type === 'TEST_CASE') {
-                    onDropTestCase(item, nodeData.key);
-                } else if (item.type === 'TEST_SUITE') {
-                    onDropTestSuite(item, nodeData.key);
-                }
-            }
-        },
-        collect: monitor => ({
-            isOver: monitor.isOver({shallow: true}),
-        }),
-    });
-
-    const style = useMemo(() => ({
-        backgroundColor: isOver ? '#BEE3F8' : isDragging ? '#F7FAFC' : 'white',
-        // 他のスタイル設定
-    }), [isOver, isDragging]);
-
-    return (
-        <div ref={(node) => drag(drop(node))} style={style}>
-            {nodeData.title}
-        </div>
-    );
-};
-
-const DroppableTree: React.FC<DroppableTreeProps> = ({ treeData, onDropTestCase, onDropTestSuite }) => {
-    return (
-        <Tree
-            showLine
-            defaultExpandAll
-            treeData={treeData}
-            titleRender={(nodeData) => <TreeNode nodeData={nodeData} onDropTestCase={onDropTestCase} onDropTestSuite={onDropTestSuite} />}
-        />
-    );
-};
 
 const CaseList: React.FC = () => {
     const {
@@ -285,6 +170,245 @@ const CaseList: React.FC = () => {
     const {project_code} = useParams();
     const {t} = useTranslation();
     const apiRequest = useApiRequest();
+    const [hoverSuiteId, setHoverSuiteId] = useState<number | null>(null);
+    const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+    const [hoverPosition, setHoverPosition] = useState<string | null>(null);
+
+    const DraggableTestCase: React.FC<DraggableTestCaseProps> = ({testCase, index, testSuiteId}) => {
+        const ref = useRef<HTMLDivElement>(null);
+
+        const [{isDragging}, drag, preview] = useDrag(() => ({
+            type: 'TEST_CASE',
+            item: {type: 'TEST_CASE', id: testCase.id, index: index, testCase: testCase},
+            collect: monitor => ({
+                isDragging: monitor.isDragging(),
+            }),
+            // end: (item, monitor) => {
+            //     const dropResult = monitor.getDropResult() as DragItem;
+            //     if (item && dropResult) {
+            //         const dragIndex = item.index;
+            //         const hoverIndex = dropResult.index;
+            //         if (dragIndex !== hoverIndex) {
+            //             // onMove(dragIndex, hoverIndex);
+            //         }
+            //     }
+            // },
+        }));
+
+        const [, drop] = useDrop({
+            accept: 'TEST_CASE',
+            hover: (item: DragItem, monitor) => {
+                const hoverBoundingRect = ref.current?.getBoundingClientRect();
+                const clientOffset = monitor.getClientOffset();
+
+                if (!hoverBoundingRect || !clientOffset) {
+                    return;
+                }
+
+                // ドロップ対象の中心のY座標を計算
+                const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+                // マウスポインタのY座標を取得
+                const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+                // マウスポインタがアイテムの上半分にあるか下半分にあるかを判定
+                if (hoverClientY < hoverMiddleY) {
+                    setHoverPosition('upper')
+                } else {
+                    setHoverPosition('lower')
+                }
+                setHoverIndex(index);
+                setHoverSuiteId(testSuiteId);
+            },
+        });
+
+        drop(drag(preview(ref)));
+
+        return (
+            <Box ref={ref} p={1} my={1} bg={isDragging ? "gray.100" : ""} borderRadius="md"
+                 opacity={isDragging ? 0.5 : 1}>
+                <HStack>
+                    <DragHandleIcon mr={2}/>
+                    <Text>{testCase.title}</Text>
+                </HStack>
+            </Box>
+        );
+    };
+
+    const DroppableTestSuite: React.FC<DroppableTestSuiteProps> = ({testSuite, onDrop, children}) => {
+        const ref = useRef<HTMLDivElement>(null);
+        const [, drop] = useDrop({
+            accept: 'TEST_CASE',
+            drop: (item: DragItem, monitor) => {
+                if (monitor.isOver({shallow: true})) {
+                    onDrop(item.testCase, testSuite);
+                }
+                return {...item, index: item.index}
+            },
+            collect: monitor => ({
+                isOver: monitor.isOver({shallow: true}),
+            }),
+        });
+
+        drop(ref)
+
+        return (
+            <div ref={ref}>
+                {children}
+            </div>
+        );
+    };
+
+    const DroppableTreeNode: React.FC<DroppableTreeNodeProps> = ({node, onDropTestCase, onDropTestSuite}) => {
+        const [, drop] = useDrop({
+            accept: ['TEST_CASE', 'TEST_SUITE'],
+            drop: (item: DragItem, monitor) => {
+                if (item.type === 'TEST_CASE') {
+                    onDropTestCase(item, node.key);
+                } else if (item.type === 'TEST_SUITE') {
+                    onDropTestSuite(item, node.key);
+                }
+            },
+        });
+
+        return (
+            <div ref={drop}>
+                {node.title}
+                {node.children && node.children.map(childNode => (
+                    <DroppableTreeNode key={childNode.key} node={childNode} onDropTestCase={onDropTestCase}
+                                       onDropTestSuite={onDropTestSuite}/>
+                ))}
+            </div>
+        );
+    };
+
+    const TreeNode: React.FC<TreeNodeProps> = ({nodeData, onDropTestCase, onDropTestSuite}) => {
+        const [{isDragging}, drag] = useDrag({
+            type: 'TEST_SUITE',
+            item: {type: 'TEST_SUITE', key: nodeData.key},
+            collect: monitor => ({
+                isDragging: monitor.isDragging(),
+            }),
+        });
+
+        const [{isOver}, drop] = useDrop({
+            accept: ['TEST_CASE', 'TEST_SUITE'],
+            drop: (item: DragItem, monitor) => {
+                if (!monitor.didDrop()) {
+                    if (item.type === 'TEST_CASE') {
+                        onDropTestCase(item, nodeData.key);
+                    } else if (item.type === 'TEST_SUITE') {
+                        onDropTestSuite(item, nodeData.key);
+                    }
+                }
+            },
+            collect: monitor => ({
+                isOver: monitor.isOver({shallow: true}),
+            }),
+        });
+
+        const style = useMemo(() => ({
+            backgroundColor: isOver ? '#BEE3F8' : isDragging ? '#F7FAFC' : 'white',
+            // 他のスタイル設定
+        }), [isOver, isDragging]);
+
+        return (
+            <div ref={(node) => drag(drop(node))} style={style}>
+                {nodeData.title}
+            </div>
+        );
+    };
+
+    const DroppableTree: React.FC<DroppableTreeProps> = ({treeData, onDropTestCase, onDropTestSuite}) => {
+        return (
+            <Tree
+                showLine
+                defaultExpandAll
+                treeData={treeData}
+                titleRender={(nodeData) => <TreeNode nodeData={nodeData} onDropTestCase={onDropTestCase}
+                                                     onDropTestSuite={onDropTestSuite}/>}
+            />
+        );
+    }
+
+    const onMoveTestCaseOnTestSuite = async (testCase: TestCase, testSuite: TestSuite) => {
+        try {
+            let testCases = testSuite.test_cases;
+
+            if (!testCases || testCases.length == 0) {
+                const response = await apiRequest(`/protected/cases/${testCase.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({test_suite_id: testSuite.id}),
+                });
+                if (response.ok) {
+                    setEditMode(false);
+                    fetchTestCases();
+                    fetchMilestones();
+                    setHoverPosition(null);
+                    setHoverSuiteId(null);
+                    setHoverIndex(null);
+                } else {
+                    throw new Error(t('failed_to_update_test_case'));
+                }
+            } else {
+                let movingTestCase = testCases.find(tc => tc.id === testCase.id);
+                if (!movingTestCase) {
+                    movingTestCase = testCase;
+                    let newIndex = hoverIndex ? hoverIndex : 0;
+
+                    // 新しい位置に挿入
+                    if (newIndex >= testCases.length) {
+                        testCases.push(movingTestCase);
+                    } else {
+                        if (hoverPosition == 'upper') {
+                            testCases.splice(newIndex, 0, movingTestCase);
+                        } else {
+                            testCases.splice(newIndex - 1, 0, movingTestCase);
+                        }
+                    }
+                } else {
+                    // 同じスイート内での移動の場合
+                    const filteredCases = testCases.filter(tc => tc.id !== testCase.id);
+                    let newIndex = hoverIndex ? hoverIndex : 0;
+
+                    if (newIndex >= filteredCases.length) {
+                        filteredCases.push(movingTestCase);
+                    } else {
+                        filteredCases.splice(newIndex, 0, movingTestCase);
+                    }
+                    testCases = filteredCases;
+                }
+
+                console.log(JSON.stringify({test_suite_id: testSuite.id, test_cases: testCases.map((tc, index) => ({ test_case_id: tc.id, index }))}));
+                const response = await apiRequest(`/protected/${project_code}/cases/bulk`, {
+                    method: 'PUT',
+                    body: JSON.stringify({test_suite_id: testSuite.id, test_cases: testCases.map((tc, index) => ({ test_case_id: tc.id, index }))}),
+                });
+                if (response.ok) {
+                    setEditMode(false);
+                    fetchTestCases();
+                    fetchMilestones();
+                    setHoverPosition(null);
+                    setHoverSuiteId(null);
+                    setHoverIndex(null);
+                } else {
+                    throw new Error(t('failed_to_update_test_case'));
+                }
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
     const onMoveTestCase = async (testCaseId: number, targetTestSuiteId: number) => {
         try {
             const response = await apiRequest(`/protected/cases/${testCaseId}`, {
@@ -547,26 +671,39 @@ const CaseList: React.FC = () => {
         onDeleteModalOpen();
     };
 
-    const renderTestCases = (testCases: TestCase[]) => (
+    const renderTestCases = (testCases: TestCase[], testSuiteId: number) => (
         <Table variant="simple">
             <Tbody>
-                {testCases.map(testCase => (
-                    <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testCase)}>
-                        <Td borderBottom="1px" borderColor="gray.200">
-                            <DraggableTestCase testCase={testCase} onMove={onMoveTestCase}/>
-                        </Td>
-                        <Td textAlign="right">
-                            <IconButton
-                                aria-label="Delete test case"
-                                icon={<DeleteIcon/>}
-                                size="sm"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(testCase.id);
-                                }}
-                            />
-                        </Td>
-                    </Tr>
+                {testCases.map((testCase, index) => (
+                    <React.Fragment key={testCase.id}>
+                        {hoverIndex === index && hoverPosition === 'upper' && hoverSuiteId === testSuiteId && (
+                            <Tr>
+                                <Td colSpan={100} style={{height: '2px', backgroundColor: '#EDF2F7'}}/>
+                            </Tr>
+                        )}
+                        <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}
+                            onClick={() => handleTestCaseClick(testCase)}>
+                            <Td borderBottom="1px" borderColor="gray.200">
+                                <DraggableTestCase testCase={testCase} index={index} testSuiteId={testSuiteId}/>
+                            </Td>
+                            <Td textAlign="right">
+                                <IconButton
+                                    aria-label="Delete test case"
+                                    icon={<DeleteIcon/>}
+                                    size="sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(testCase.id);
+                                    }}
+                                />
+                            </Td>
+                        </Tr>
+                        {hoverIndex === index && hoverPosition === 'lower' && hoverSuiteId === testSuiteId && (
+                            <Tr>
+                                <Td colSpan={100} style={{height: '2px', backgroundColor: '#EDF2F7'}}/>
+                            </Tr>
+                        )}
+                    </React.Fragment>
                 ))}
             </Tbody>
         </Table>
@@ -602,7 +739,7 @@ const CaseList: React.FC = () => {
     };
 
     const handleTestCaseDropOnTree = (item: DragItem, targetNodeKey: number) => {
-        const testCaseId = item.id;
+        const testCaseId = item.testCase.id;
         onMoveTestCase(testCaseId, targetNodeKey);
     };
 
@@ -613,7 +750,7 @@ const CaseList: React.FC = () => {
 
     const renderTestSuites = (suites: TestSuite[], level = 0) => (
         suites.map(suite => (
-            <DroppableTestSuite key={suite.id} testSuite={suite} onDrop={onMoveTestCase}>
+            <DroppableTestSuite key={suite.id} testSuite={suite} onDrop={onMoveTestCaseOnTestSuite}>
                 <Box mb={4} pl={`${level * 2}em`}>
                     <TestSuiteHeader
                         title={suite.name}
@@ -628,7 +765,7 @@ const CaseList: React.FC = () => {
                         }}
                     />
                     <Box mb={4}>
-                        {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases)}
+                        {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases, suite.id)}
                     </Box>
                     {/* 再帰的に子のTestSuiteをレンダリング */}
                     {suite.test_suites && suite.test_suites.length > 0 && (
@@ -647,7 +784,8 @@ const CaseList: React.FC = () => {
                 <Header project_code={project_code} is_show_menu={true}/>
                 <Flex h="100vh">
                     <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
-                        <DroppableTree treeData={onlyTestSuites} onDropTestCase={handleTestCaseDropOnTree} onDropTestSuite={handleTestSuiteDropOnTree} />
+                        <DroppableTree treeData={onlyTestSuites} onDropTestCase={handleTestCaseDropOnTree}
+                                       onDropTestSuite={handleTestSuiteDropOnTree}/>
                     </Box>
                     <Box w="50%" p={5} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
                         <Box p={5}>

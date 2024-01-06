@@ -9,6 +9,7 @@ type TestCase struct {
 	MilestoneID *uint     `json:"milestone_id"`
 	Title       string    `json:"title"`
 	Content     string    `json:"content"`
+	OrderIndex  int       `json:"order_index"`
 	TestSuite   TestSuite `gorm:"foreignKey:TestSuiteID;pointer"`
 	Project     Project   `gorm:"foreignKey:ProjectID"`
 	Milestone   Milestone `gorm:"foreignKey:MilestoneID"`

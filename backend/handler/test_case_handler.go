@@ -61,9 +61,14 @@ func (h *TestCaseHandler) GetTestCases(c *gin.Context) {
 
 	testSuites := []model.TestSuite{}
 	if result := h.DB.Where("project_id = ?", project.ID).
-		Preload("TestCases").
+		Order("test_suites.order_index ASC, test_suites.id ASC"). // TestSuite の並び順をここで指定
+		Preload("TestCases", func(db *gorm.DB) *gorm.DB {
+			return db.Order("test_cases.order_index ASC, test_cases.id ASC")
+		}).
 		Preload("TestCases.Milestone").
-		Preload("TestSuites.TestCases").
+		Preload("TestSuites.TestCases", func(db *gorm.DB) *gorm.DB {
+			return db.Order("test_cases.order_index ASC, test_cases.id ASC")
+		}).
 		Preload("TestSuites.TestCases.Milestone").
 		Find(&testSuites); result.Error != nil {
 		handleError(c, http.StatusInternalServerError, "Failed to retrieve records", result.Error)
@@ -281,4 +286,36 @@ func (h *TestCaseHandler) DeleteTestSuite(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+type TestCaseRequestRow struct {
+	TestCaseID uint `json:"test_case_id"`
+	OrderIndex int  `json:"index"`
+}
+
+type TestCaseRequest struct {
+	TestSuiteID         uint                 `json:"test_suite_id"`
+	TestCaseRequestRows []TestCaseRequestRow `json:"test_cases"`
+}
+
+func (h *TestCaseHandler) PutTestCaseBulk(c *gin.Context) {
+	var req TestCaseRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	for _, row := range req.TestCaseRequestRows {
+		update := map[string]interface{}{
+			"test_suite_id": req.TestSuiteID,
+			"order_index":   row.OrderIndex,
+		}
+		if err := h.DB.Model(&model.TestCase{}).
+			Where("id = ?", row.TestCaseID).
+			Updates(update).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
