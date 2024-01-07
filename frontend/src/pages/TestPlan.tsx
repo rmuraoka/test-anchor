@@ -36,7 +36,7 @@ import {
     useToken,
     VStack
 } from '@chakra-ui/react';
-import {useParams} from "react-router-dom";
+import {useNavigate, useParams} from "react-router-dom";
 import {
     ArcElement,
     CategoryScale,
@@ -56,6 +56,7 @@ import gfm from "remark-gfm";
 import Header from "../components/Header";
 import {useTranslation} from "react-i18next";
 import {useApiRequest} from "../components/UseApiRequest";
+import {ChevronLeftIcon, TimeIcon} from "@chakra-ui/icons";
 
 ChartJS.register(
     ArcElement,
@@ -126,6 +127,12 @@ interface TestSuiteHeaderProps {
     title: string;
 }
 
+interface TestPlanUpdate {
+    status: string;
+    started_at?: string;
+    completed_at?: string | null;
+}
+
 const TestPlan: React.FC = () => {
     const [projectId, setProjectId] = useState<number>(0);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -156,6 +163,7 @@ const TestPlan: React.FC = () => {
     const apiRequest = useApiRequest();
     const [selectedCount, setSelectedCount] = useState(0);
     const isOverLimit = selectedCount > 10000;
+    const [testPlanStatus, setTestPlanStatus] = useState<string>('');
 
     // APIからテストケースを取得
     const fetchTestRuns = async () => {
@@ -164,6 +172,7 @@ const TestPlan: React.FC = () => {
             const data = await response.json();
             setProjectId(data.project_id)
             setTestRun(data.test_runs)
+            setTestPlanStatus(data.status);
             setCharts(data.charts)
             setIsLoading(false);
         } catch (error) {
@@ -223,9 +232,50 @@ const TestPlan: React.FC = () => {
                 duration: 5000,
                 isClosable: true,
             });
-            fetchTestRuns()
-            fetchTestCases()
-            onEditModalClose()
+            fetchTestRuns();
+            fetchTestCases();
+            onEditModalClose();
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const handleTestPlanStatusChange = async (newStatus: string, currentStatus: string) => {
+        try {
+            const now = new Date().toISOString();
+            let updateData: TestPlanUpdate = {
+                status: newStatus
+            };
+
+            if (newStatus === 'InProcess' && currentStatus !== 'Completed') {
+                updateData.started_at = now;
+            } else if (newStatus == 'InProcess' && currentStatus == 'Completed') {
+                updateData.completed_at = null;
+            } else if (newStatus === 'Completed') {
+                updateData.completed_at = now;
+            }
+
+            const response = await apiRequest(`/protected/plans/${test_plan_id}`, {
+                method: 'PUT',
+                body: JSON.stringify(updateData)
+            });
+
+            if (!response.ok) {
+                throw new Error(t('status_update_failed'));
+            }
+            setTestPlanStatus(newStatus);
+            fetchTestRuns();
+            fetchTestCases();
         } catch (error) {
             let errorMessage = t('error_occurred');
             if (error instanceof Error) {
@@ -317,6 +367,41 @@ const TestPlan: React.FC = () => {
             </Tbody>
         </Table>
     );
+
+    const MenuBar = () => {
+        return (
+            <Flex
+                as="nav"
+                position="fixed"
+                bottom="0"
+                left="0"
+                right="0"
+                borderTopWidth="1px"
+                padding="1rem"
+                justifyContent="start"
+                bg="white"
+                zIndex="sticky"
+            >
+                {renderStatusButton()}
+            </Flex>
+        );
+    };
+
+    const renderStatusButton = () => {
+        switch (testPlanStatus) {
+            case 'NotExecuted':
+                return <Button leftIcon={<TimeIcon/>}
+                               onClick={() => handleTestPlanStatusChange('InProcess', testPlanStatus)}>{t('start_test')}</Button>;
+            case 'InProcess':
+                return <Button leftIcon={<TimeIcon/>}
+                               onClick={() => handleTestPlanStatusChange('Completed', testPlanStatus)}>{t('complete')}</Button>;
+            case 'Completed':
+                return <Button leftIcon={<TimeIcon/>}
+                               onClick={() => handleTestPlanStatusChange('InProcess', testPlanStatus)}>{t('return_to_in_process')}</Button>;
+            default:
+                return null;
+        }
+    };
 
     const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title}) => {
         return (
@@ -467,6 +552,7 @@ const TestPlan: React.FC = () => {
                     </Table>
                 </Container>
             </Box>
+            <MenuBar/>
             <Modal isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay/>
                 <ModalContent>

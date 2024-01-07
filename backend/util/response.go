@@ -128,12 +128,14 @@ type TestRun struct {
 }
 
 type TestPlan struct {
-	ID        uint   `json:"id"`
-	ProjectID uint   `json:"project_id"`
-	Title     string `json:"title"`
-	Status    string `json:"status"`
-	CreatedBy User   `json:"created_by"`
-	UpdatedBy User   `json:"updated_by"`
+	ID          uint    `json:"id"`
+	ProjectID   uint    `json:"project_id"`
+	Title       string  `json:"title"`
+	Status      string  `json:"status"`
+	StartedAt   *string `json:"started_at"`
+	CompletedAt *string `json:"completed_at"`
+	CreatedBy   User    `json:"created_by"`
+	UpdatedBy   User    `json:"updated_by"`
 }
 
 type TestPlanDetail struct {

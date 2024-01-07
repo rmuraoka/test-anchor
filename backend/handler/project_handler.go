@@ -72,13 +72,25 @@ func (h *ProjectHandler) GetProject(c *gin.Context) {
 
 	testRuns := make([]util.TestPlan, len(project.TestPlans))
 	for i, tp := range project.TestPlans {
+		var startedAtStr *string
+		var completedAtStr *string
+		if tp.StartedAt != nil && !tp.StartedAt.IsZero() {
+			formattedStartedAt := tp.StartedAt.Format("2006-01-02 15:04")
+			startedAtStr = &formattedStartedAt
+		}
+		if tp.CompletedAt != nil && !tp.CompletedAt.IsZero() {
+			formattedCompletedAt := tp.CompletedAt.Format("2006-01-02 15:04")
+			completedAtStr = &formattedCompletedAt
+		}
 		testRuns[i] = util.TestPlan{
-			ID:        tp.ID,
-			ProjectID: tp.ProjectID,
-			Title:     tp.Title,
-			Status:    tp.Status,
-			CreatedBy: util.User{ID: tp.CreatedByID, Name: tp.CreatedBy.Name},
-			UpdatedBy: util.User{ID: tp.UpdatedByID, Name: tp.UpdatedBy.Name},
+			ID:          tp.ID,
+			ProjectID:   tp.ProjectID,
+			Title:       tp.Title,
+			Status:      tp.Status,
+			StartedAt:   startedAtStr,
+			CompletedAt: completedAtStr,
+			CreatedBy:   util.User{ID: tp.CreatedByID, Name: tp.CreatedBy.Name},
+			UpdatedBy:   util.User{ID: tp.UpdatedByID, Name: tp.UpdatedBy.Name},
 		}
 	}
 

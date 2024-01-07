@@ -45,11 +45,24 @@ func (h *TestPlanHandler) GetTestPlans(c *gin.Context) {
 	// Prepare the response data
 	testPlanResponses := []util.TestPlan{}
 	for _, testPlan := range testPlans {
+		var startedAtStr *string
+		var completedAtStr *string
+		if testPlan.StartedAt != nil && !testPlan.StartedAt.IsZero() {
+			formattedStartedAt := testPlan.StartedAt.Format("2006-01-02 15:04")
+			startedAtStr = &formattedStartedAt
+		}
+		if testPlan.CompletedAt != nil && !testPlan.CompletedAt.IsZero() {
+			formattedCompletedAt := testPlan.CompletedAt.Format("2006-01-02 15:04")
+			completedAtStr = &formattedCompletedAt
+		}
+
 		testPlanResponses = append(testPlanResponses, util.TestPlan{
-			ID:        testPlan.ID,
-			ProjectID: testPlan.ProjectID,
-			Title:     testPlan.Title,
-			Status:    testPlan.Status,
+			ID:          testPlan.ID,
+			ProjectID:   testPlan.ProjectID,
+			Title:       testPlan.Title,
+			Status:      testPlan.Status,
+			StartedAt:   startedAtStr,
+			CompletedAt: completedAtStr,
 			CreatedBy: util.User{
 				ID:   testPlan.CreatedByID,
 				Name: testPlan.CreatedBy.Name,
