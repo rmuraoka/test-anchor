@@ -319,3 +319,35 @@ func (h *TestCaseHandler) PutTestCaseBulk(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
+
+type TestSuiteRequestRow struct {
+	TestSuiteID uint `json:"test_suite_id"`
+	OrderIndex  int  `json:"index"`
+}
+
+type TestSuiteRequest struct {
+	ParentID            *uint                 `json:"parent_id"`
+	TestCaseRequestRows []TestSuiteRequestRow `json:"test_suites"`
+}
+
+func (h *TestCaseHandler) PutTestSuiteBulk(c *gin.Context) {
+	var req TestSuiteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	for _, row := range req.TestCaseRequestRows {
+		update := map[string]interface{}{
+			"parent_id":   req.ParentID,
+			"order_index": row.OrderIndex,
+		}
+		if err := h.DB.Model(&model.TestSuite{}).
+			Where("id = ?", row.TestSuiteID).
+			Updates(update).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}

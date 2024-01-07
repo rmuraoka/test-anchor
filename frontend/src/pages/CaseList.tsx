@@ -113,24 +113,30 @@ interface TreeDataItem {
     title: React.ReactNode;
     key: number;
     children?: TreeDataItem[];
+    index?: number;
 }
 
 interface DroppableTreeNodeProps {
     node: TreeDataItem;
+    index: number;
     onDropTestCase: (item: DragItem, nodeKey: number) => void;
     onDropTestSuite: (item: DragItem, nodeKey: number) => void;
+    onMoveNode: (item: DragItem, nodeKey: number | null) => void;
 }
 
 interface DroppableTreeProps {
     treeData: TreeDataItem[];
     onDropTestCase: (item: DragItem, nodeKey: number) => void;
     onDropTestSuite: (item: DragItem, nodeKey: number) => void;
+    onMoveNode: (item: DragItem, nodeKey: number | null) => void;
 }
 
 interface TreeNodeProps {
     nodeData: TreeDataItem;
+    index?: number;
     onDropTestCase: (item: DragItem, nodeKey: number) => void;
     onDropTestSuite: (item: DragItem, nodeKey: number) => void
+    onMoveNode: (item: DragItem, nodeKey: number | null) => void;
 }
 
 const CaseList: React.FC = () => {
@@ -173,6 +179,9 @@ const CaseList: React.FC = () => {
     const [hoverSuiteId, setHoverSuiteId] = useState<number | null>(null);
     const [hoverIndex, setHoverIndex] = useState<number | null>(null);
     const [hoverPosition, setHoverPosition] = useState<string | null>(null);
+    const [hoverNodeKey, setHoverNodeKey] = useState<number | null>(null);
+    const [hoverNodeIndex, setHoverNodeIndex] = useState<number | null>(null);
+    const [hoverNodePosition, setHoverNodePosition] = useState<string | null>(null);
 
     const DraggableTestCase: React.FC<DraggableTestCaseProps> = ({testCase, index, testSuiteId}) => {
         const ref = useRef<HTMLDivElement>(null);
@@ -250,30 +259,8 @@ const CaseList: React.FC = () => {
         );
     };
 
-    const DroppableTreeNode: React.FC<DroppableTreeNodeProps> = ({node, onDropTestCase, onDropTestSuite}) => {
-        const [, drop] = useDrop({
-            accept: ['TEST_CASE', 'TEST_SUITE'],
-            drop: (item: DragItem, monitor) => {
-                if (item.type === 'TEST_CASE') {
-                    onDropTestCase(item, node.key);
-                } else if (item.type === 'TEST_SUITE') {
-                    onDropTestSuite(item, node.key);
-                }
-            },
-        });
-
-        return (
-            <div ref={drop}>
-                {node.title}
-                {node.children && node.children.map(childNode => (
-                    <DroppableTreeNode key={childNode.key} node={childNode} onDropTestCase={onDropTestCase}
-                                       onDropTestSuite={onDropTestSuite}/>
-                ))}
-            </div>
-        );
-    };
-
-    const TreeNode: React.FC<TreeNodeProps> = ({nodeData, onDropTestCase, onDropTestSuite}) => {
+    const TreeNode: React.FC<TreeNodeProps> = ({nodeData, index, onDropTestCase, onDropTestSuite, onMoveNode}) => {
+        const ref = useRef<HTMLDivElement>(null);
         const [{isDragging}, drag] = useDrag({
             type: 'TEST_SUITE',
             item: {type: 'TEST_SUITE', key: nodeData.key},
@@ -288,37 +275,100 @@ const CaseList: React.FC = () => {
                 if (!monitor.didDrop()) {
                     if (item.type === 'TEST_CASE') {
                         onDropTestCase(item, nodeData.key);
-                    } else if (item.type === 'TEST_SUITE') {
+                    } else if (item.type === 'TEST_SUITE' && hoverNodePosition === null) {
                         onDropTestSuite(item, nodeData.key);
+                    } else if (item.type === 'TEST_SUITE' && (hoverNodePosition === 'upper' || hoverNodePosition === 'lower')) {
+                        onMoveNode(item, nodeData.key);
                     }
                 }
+
+                setHoverNodeIndex(null);
+                setHoverNodeKey(null);
+                setHoverNodePosition(null);
+            },
+            hover: (item: DragItem, monitor) => {
+                const hoverBoundingRect = ref.current?.getBoundingClientRect();
+                const clientOffset = monitor.getClientOffset();
+
+                if (!hoverBoundingRect || !clientOffset) {
+                    return;
+                }
+
+                // ドロップ対象の中心のY座標を計算
+                const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+                // マウスポインタのY座標を取得
+                const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+                const middleMargin = 3;
+
+                // マウスポインタがアイテムの上半分にあるか下半分にあるかを判定
+                if (hoverClientY < hoverMiddleY - middleMargin) {
+                    setHoverNodePosition('upper')
+                } else if (hoverClientY > hoverMiddleY + middleMargin) {
+                    setHoverNodePosition('lower')
+                } else {
+                    setHoverNodePosition(null)
+                }
+                if (index !== undefined) {
+                    setHoverNodeIndex(index);
+                }
+                setHoverNodeKey(nodeData.key);
             },
             collect: monitor => ({
                 isOver: monitor.isOver({shallow: true}),
             }),
         });
 
-        const style = useMemo(() => ({
-            backgroundColor: isOver ? '#BEE3F8' : isDragging ? '#F7FAFC' : 'white',
-            // 他のスタイル設定
-        }), [isOver, isDragging]);
+        drag(drop(ref))
 
         return (
-            <div ref={(node) => drag(drop(node))} style={style}>
-                {nodeData.title}
+            <div ref={ref}>
+                {hoverNodeIndex === index && hoverNodePosition === 'upper' && nodeData.key === hoverNodeKey && (
+                    <Box height="2px" bg="blue.500" width="100%"/>
+                )}
+                <Box
+                    bgColor={isOver ? 'gray.100' : isDragging ? 'BlackAlpha.50' : ''}
+                    height={6}>
+                    {nodeData.title}
+                </Box>
+                {hoverNodeIndex === index && hoverNodePosition === 'lower' && nodeData.key === hoverNodeKey && (
+                    <Box height="2px" bg="blue.500" width="100%"/>
+                )}
             </div>
         );
     };
 
-    const DroppableTree: React.FC<DroppableTreeProps> = ({treeData, onDropTestCase, onDropTestSuite}) => {
+    const DroppableTree: React.FC<DroppableTreeProps> = ({treeData, onDropTestCase, onDropTestSuite, onMoveNode}) => {
+        const [, drop] = useDrop({
+            accept: ['TEST_SUITE'],
+            drop: (item: DragItem, monitor) => {
+                if (!monitor.didDrop()) {
+                    onMoveNode(item, null);
+                }
+            }
+        });
+
+        const addIndexToTreeData = (nodes: TreeDataItem[]): TreeDataItem[] => {
+            return nodes.map((node, index) => ({
+                ...node,
+                index: index,
+                children: node.children ? addIndexToTreeData(node.children) : []
+            }));
+        };
+
         return (
-            <Tree
-                showLine
-                defaultExpandAll
-                treeData={treeData}
-                titleRender={(nodeData) => <TreeNode nodeData={nodeData} onDropTestCase={onDropTestCase}
-                                                     onDropTestSuite={onDropTestSuite}/>}
-            />
+            <div ref={drop}>
+                <Tree
+                    showLine
+                    defaultExpandAll
+                    treeData={addIndexToTreeData(treeData)}
+                    titleRender={(nodeData: TreeDataItem) =>
+                        <TreeNode nodeData={nodeData}
+                                  index={nodeData.index}
+                                  onDropTestCase={onDropTestCase}
+                                  onDropTestSuite={onDropTestSuite}
+                                  onMoveNode={onMoveNode}/>}
+                />
+            </div>
         );
     }
 
@@ -370,21 +420,23 @@ const CaseList: React.FC = () => {
                     testCases = filteredCases;
                 }
 
-                console.log(JSON.stringify({test_suite_id: testSuite.id, test_cases: testCases.map((tc, index) => ({ test_case_id: tc.id, index }))}));
                 const response = await apiRequest(`/protected/${project_code}/cases/bulk`, {
                     method: 'PUT',
-                    body: JSON.stringify({test_suite_id: testSuite.id, test_cases: testCases.map((tc, index) => ({ test_case_id: tc.id, index }))}),
+                    body: JSON.stringify({
+                        test_suite_id: testSuite.id,
+                        test_cases: testCases.map((tc, index) => ({test_case_id: tc.id, index}))
+                    }),
                 });
                 if (response.ok) {
                     setEditMode(false);
                     fetchTestCases();
                     fetchMilestones();
-                    setHoverPosition(null);
-                    setHoverSuiteId(null);
-                    setHoverIndex(null);
                 } else {
                     throw new Error(t('failed_to_update_test_case'));
                 }
+                setHoverPosition(null);
+                setHoverSuiteId(null);
+                setHoverIndex(null);
             }
         } catch (error) {
             let errorMessage = t('error_occurred');
@@ -430,8 +482,12 @@ const CaseList: React.FC = () => {
         }
     };
 
-    const onMoveTestSuite = async (testSuiteId: number, targetTestSuiteId: number) => {
+    const onMoveTestSuite = async (testSuiteId: number, targetTestSuiteId: number | null) => {
         try {
+            if (testSuiteId === targetTestSuiteId) {
+                return;
+            }
+
             const response = await apiRequest(`/protected/suites/${testSuiteId}`, {
                 method: 'PUT',
                 body: JSON.stringify({parent_id: targetTestSuiteId}),
@@ -444,6 +500,68 @@ const CaseList: React.FC = () => {
             } else {
                 throw new Error(t('failed_to_update_test_case')); // TODO テストスイート用の文言に変える
             }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const onMoveTestSuiteOnNode = async (testSuite: TestSuite, testSuites: TestSuite[], parentId: number | null) => {
+        try {
+            let movingSuite = testSuites.find(ts => ts.id === testSuite.id);
+            if (!movingSuite) {
+                movingSuite = testSuite;
+                let newIndex = hoverIndex ? hoverIndex : 0;
+
+                // 新しい位置に挿入
+                if (newIndex >= testSuites.length) {
+                    testSuites.push(movingSuite);
+                } else {
+                    if (hoverNodePosition == 'upper') {
+                        testSuites.splice(newIndex, 0, movingSuite);
+                    } else {
+                        testSuites.splice(newIndex - 1, 0, movingSuite);
+                    }
+                }
+            } else {
+                // 同じスイート内での移動の場合
+                const filteredSuites = testSuites.filter(ts => ts.id !== testSuite.id);
+                let newIndex = hoverNodeIndex ? hoverNodeIndex : 0;
+
+                if (newIndex >= filteredSuites.length) {
+                    filteredSuites.push(movingSuite);
+                } else {
+                    filteredSuites.splice(newIndex, 0, movingSuite);
+                }
+                testSuites = filteredSuites;
+            }
+            const response = await apiRequest(`/protected/${project_code}/suites/bulk`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    parent_id: parentId,
+                    test_suites: testSuites.map((tc, index) => ({test_suite_id: tc.id, index}))
+                }),
+            });
+            if (response.ok) {
+                setEditMode(false);
+                fetchTestCases();
+                fetchMilestones();
+            } else {
+                throw new Error(t('failed_to_update_test_case'));
+            }
+
+            setHoverPosition(null);
+            setHoverSuiteId(null);
+            setHoverIndex(null);
         } catch (error) {
             let errorMessage = t('error_occurred');
             if (error instanceof Error) {
@@ -670,7 +788,7 @@ const CaseList: React.FC = () => {
                     <React.Fragment key={testCase.id}>
                         {hoverIndex === index && hoverPosition === 'upper' && hoverSuiteId === testSuiteId && (
                             <Tr>
-                                <Td colSpan={100} backgroundColor="gray.100" />
+                                <Td colSpan={100} backgroundColor="gray.100"/>
                             </Tr>
                         )}
                         <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}
@@ -692,7 +810,7 @@ const CaseList: React.FC = () => {
                         </Tr>
                         {hoverIndex === index && hoverPosition === 'lower' && hoverSuiteId === testSuiteId && (
                             <Tr>
-                                <Td colSpan={100} backgroundColor="gray.100" />
+                                <Td colSpan={100} backgroundColor="gray.100"/>
                             </Tr>
                         )}
                     </React.Fragment>
@@ -735,9 +853,67 @@ const CaseList: React.FC = () => {
         onMoveTestCase(testCaseId, targetNodeKey);
     };
 
-    const handleTestSuiteDropOnTree = (item: DragItem, targetNodeKey: number) => {
+    const handleTestSuiteDropOnTree = (item: DragItem, targetNodeKey: number | null) => {
         const testSuiteId = item.key;
         onMoveTestSuite(testSuiteId, targetNodeKey);
+    };
+
+    const handleNodeDropOnTree = (item: DragItem, targetNodeKey: number | null) => {
+        const testSuiteId = item.key;
+        let parentId = null;
+
+        const testSuitesCopy = JSON.parse(JSON.stringify(testSuites));
+        const findTestSuiteById = (testSuites: TestSuite[], id: number): TestSuite | null => {
+            for (const testSuite of testSuites) {
+                if (testSuite.id === id) {
+                    return testSuite;
+                }
+                if (testSuite.test_suites) {
+                    const found = findTestSuiteById(testSuite.test_suites, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
+        const findParentTestSuite = (testSuites: TestSuite[], key: number | null, currentParentId: number | null = null): number | null => {
+            for (const testSuite of testSuites) {
+                if (testSuite.id === key) {
+                    return currentParentId;
+                }
+                if (testSuite.test_suites) {
+                    const foundParentId = findParentTestSuite(testSuite.test_suites, key, testSuite.id);
+                    if (foundParentId !== null) return foundParentId;
+                }
+            }
+            return null;
+        };
+
+        const findTestSuitesByParentId = (testSuites: TestSuite[], parentId: number | null): TestSuite[] => {
+            if (parentId === null) {
+                return testSuites;
+            }
+            for (const testSuite of testSuites) {
+                if (testSuite.id === parentId) {
+                    return testSuite.test_suites || [];
+                }
+                if (testSuite.test_suites) {
+                    const found = findTestSuitesByParentId(testSuite.test_suites, parentId);
+                    if (found.length > 0) return found;
+                }
+            }
+            return [];
+        };
+
+        parentId = findParentTestSuite(testSuitesCopy, targetNodeKey);
+        const testSuiteToMove = findTestSuiteById(testSuitesCopy, testSuiteId);
+        const testSuitesToMove = findTestSuitesByParentId(testSuitesCopy, parentId)
+
+        if (!testSuiteToMove) {
+            return;
+        }
+
+        onMoveTestSuiteOnNode(testSuiteToMove, testSuitesToMove, parentId);
     };
 
     const renderTestSuites = (suites: TestSuite[], level = 0) => (
@@ -758,7 +934,7 @@ const CaseList: React.FC = () => {
                     />
                     <Box mb={4}>
                         {hoverSuiteId === suite.id && suite.test_cases?.length === 0 && (
-                            <Box height="30px" backgroundColor="gray.100" />
+                            <Box height="30px" backgroundColor="gray.100"/>
                         )}
                         {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases, suite.id)}
                     </Box>
@@ -779,8 +955,11 @@ const CaseList: React.FC = () => {
                 <Header project_code={project_code} is_show_menu={true}/>
                 <Flex h="100vh">
                     <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
-                        <DroppableTree treeData={onlyTestSuites} onDropTestCase={handleTestCaseDropOnTree}
-                                       onDropTestSuite={handleTestSuiteDropOnTree}/>
+                        <DroppableTree treeData={onlyTestSuites}
+                                       onDropTestCase={handleTestCaseDropOnTree}
+                                       onDropTestSuite={handleTestSuiteDropOnTree}
+                                       onMoveNode={handleNodeDropOnTree}
+                        />
                     </Box>
                     <Box w="50%" p={5} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
                         <Box p={5}>
