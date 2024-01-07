@@ -75,5 +75,13 @@
   "test_run_updated": "Test run has been updated.",
   "title": "Title",
   "update": "Update",
-  "update_test_case": "Test case has been updated."
+  "update_test_case": "Test case has been updated.",
+  "passwords_do_not_match": "Passwords do not match.",
+  "password_changed_successfully": "Password updated successfully.",
+  "error_updating_password": "Failed to update password.",
+  "member_management": "Member Management",
+  "change_password": "Change Password",
+  "current_password": "Current Password",
+  "new_password": "New Password",
+  "confirm_new_password": "Confirm New Password"
 }

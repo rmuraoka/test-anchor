@@ -75,5 +75,13 @@
   "test_run_updated": "テストランが更新されました。",
   "title": "タイトル",
   "update": "更新",
-  "update_test_case": "テストケースが更新されました。"
+  "update_test_case": "テストケースが更新されました。",
+  "passwords_do_not_match": "パスワードが一致しませんでした。",
+  "password_changed_successfully": "パスワードの更新に成功しました。",
+  "error_updating_password": "パスワードの更新に失敗しました。",
+  "member_management": "メンバー管理",
+  "change_password": "パスワード変更",
+  "current_password": "現在のパスワード",
+  "new_password": "新しいパスワード",
+  "confirm_new_password": "新しいパスワード（確認）"
 }

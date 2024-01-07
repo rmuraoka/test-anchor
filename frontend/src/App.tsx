@@ -11,6 +11,7 @@ import MilestonePage from './pages/Milestone'
 import LoginPage from './pages/Login'
 import SettingsPage from './pages/Settings';
 import SettingMembersPage from './pages/SettingMembers';
+import SettingPasswordPage from './pages/SettingPassword';
 import PrivateRoute from './PrivateRoute';
 
 const App = () => {
@@ -21,6 +22,7 @@ const App = () => {
                 <Route path="/" element={<PrivateRoute><HomePage/></PrivateRoute>}/>
                 <Route path="/settings" element={<PrivateRoute><SettingsPage/></PrivateRoute>}/>
                 <Route path="/settings/members" element={<PrivateRoute><SettingMembersPage/></PrivateRoute>}/>
+                <Route path="/settings/password" element={<PrivateRoute><SettingPasswordPage/></PrivateRoute>}/>
                 <Route path="/:project_code/cases" element={<PrivateRoute><CaseListPage/></PrivateRoute>}/>
                 <Route path="/:project_code/plans/:test_plan_id"
                        element={<PrivateRoute><TestPlanPage/></PrivateRoute>}/>

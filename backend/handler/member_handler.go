@@ -3,6 +3,7 @@ package handler
 import (
 	"backend/model"
 	"backend/util"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"log"
@@ -114,6 +115,26 @@ func (h *MemberHandler) PutMember(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
+	}
+
+	currentPassword := c.PostForm("current_password")
+	if currentPassword != "" {
+		var user model.User
+		if result := h.DB.First(&user, id); result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				handleError(c, http.StatusUnauthorized, "User not found", result.Error)
+				return
+			}
+			handleError(c, http.StatusInternalServerError, "Failed to retrieve project", result.Error)
+			return
+		}
+		userHashedPassword := user.Password
+
+		// パスワードのチェック
+		if !checkPasswordHash(currentPassword, userHashedPassword) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "認証に失敗しました"})
+			return
+		}
 	}
 
 	var updatedMember model.User
