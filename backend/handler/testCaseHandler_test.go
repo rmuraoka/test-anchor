@@ -95,7 +95,7 @@ func TestPostTestCase(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec("^INSERT INTO `test_cases`").
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -230,7 +230,7 @@ func TestPostTestSuite(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec("^INSERT INTO `test_suites`").
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -316,4 +316,78 @@ func TestDeleteTestSuites(t *testing.T) {
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestPutTestCasesBulk(t *testing.T) {
+	h, mock := setupMockTestCaseHandler()
+	gin.SetMode(gin.TestMode)
+
+	// モックデータの設定
+	testCaseRequestRows := []handler.TestCaseRequestRow{}
+	testCaseRequestRows = append(testCaseRequestRows, handler.TestCaseRequestRow{TestCaseID: uint(1), OrderIndex: 0})
+	requestBody := handler.TestCaseRequest{
+		TestSuiteID:         uint(1),
+		TestCaseRequestRows: testCaseRequestRows,
+	}
+
+	// TestRunCasesのINSERTクエリを模擬
+	mock.ExpectBegin()
+	mock.ExpectExec("^UPDATE `test_cases`").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	// HTTPリクエストの設定
+	r := gin.Default()
+	body, _ := json.Marshal(requestBody)
+	req, _ := http.NewRequest("POST", "/protected/:project_code/cases/bulk", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	// テスト実行
+	r.POST("/protected/:project_code/cases/bulk", h.PutTestCaseBulk)
+	r.ServeHTTP(w, req)
+
+	// レスポンスと期待される結果を検証
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// モックの期待が満たされたか検証
+	err := mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+}
+
+func TestPutTestSuitesBulk(t *testing.T) {
+	h, mock := setupMockTestCaseHandler()
+	gin.SetMode(gin.TestMode)
+
+	// モックデータの設定
+	testCaseRequestRows := []handler.TestSuiteRequestRow{}
+	testCaseRequestRows = append(testCaseRequestRows, handler.TestSuiteRequestRow{TestSuiteID: uint(1), OrderIndex: 0})
+	requestBody := handler.TestSuiteRequest{
+		ParentID:            nil,
+		TestCaseRequestRows: testCaseRequestRows,
+	}
+
+	// TestRunCasesのINSERTクエリを模擬
+	mock.ExpectBegin()
+	mock.ExpectExec("^UPDATE `test_suites`").
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	// HTTPリクエストの設定
+	r := gin.Default()
+	body, _ := json.Marshal(requestBody)
+	req, _ := http.NewRequest("POST", "/protected/:project_code/suites/bulk", bytes.NewBuffer(body))
+	w := httptest.NewRecorder()
+
+	// テスト実行
+	r.POST("/protected/:project_code/suites/bulk", h.PutTestSuiteBulk)
+	r.ServeHTTP(w, req)
+
+	// レスポンスと期待される結果を検証
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// モックの期待が満たされたか検証
+	err := mock.ExpectationsWereMet()
+	assert.NoError(t, err)
 }
