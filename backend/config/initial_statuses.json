@@ -1,0 +1,9 @@
+[
+  {"name": "Untested", "color": "gray", "default": true},
+  {"name": "Passed", "color": "green", "default": false},
+  {"name": "Failed", "color": "red", "default": false},
+  {"name": "In Progress", "color": "blue", "default": false},
+  {"name": "Blocked", "color": "orange", "default": false},
+  {"name": "Skipped", "color": "yellow", "default": false},
+  {"name": "Not Applicable", "color": "cyan", "default": false}
+]

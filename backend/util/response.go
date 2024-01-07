@@ -186,3 +186,8 @@ type Member struct {
 type MembersResponseData struct {
 	Members []Member `json:"entities"`
 }
+
+type StatusesResponseData struct {
+	DefaultID uint     `json:"default_id"`
+	Statuses  []Status `json:"entities"`
+}

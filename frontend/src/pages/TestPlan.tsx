@@ -427,7 +427,8 @@ const TestPlan: React.FC = () => {
     );
 
     function Chart() {
-        const [red300, green300, gray300] = useToken("colors", ["red.300", "green.300", "gray.300"]);
+        const [red300, green300, gray300, orange300, yellow300, teal300, blue300, cyan300, purple300, pink300] =
+            useToken("colors", ["red.300", "green.300", "gray.300", "orange.300", "yellow.300", "teal.300", "blue.300", "cyan.300", "purple.300", "pink.300"]);
         const hasData = charts.some(chart => chart.count > 0);
         if (!hasData) {
             return null; // データがない場合は何も表示しない
@@ -442,10 +443,23 @@ const TestPlan: React.FC = () => {
                         switch (chart.color) {
                             case "red":
                                 return red300;
+                            case "orange":
+                                return orange300;
+                            case "yellow":
+                                return yellow300;
                             case "green":
                                 return green300;
+                            case "teal":
+                                return teal300;
+                            case "blue":
+                                return blue300;
+                            case "cyan":
+                                return cyan300;
+                            case "purple":
+                                return purple300;
+                            case "pink":
+                                return pink300;
                             case "gray":
-                                return gray300;
                             default:
                                 return gray300; // デフォルトの色
                         }

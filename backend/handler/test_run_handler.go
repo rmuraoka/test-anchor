@@ -342,13 +342,16 @@ func (h *TestRunHandler) PostTestRunCaseBulk(c *gin.Context) {
 	}
 
 	// 新しいTestRunCaseを作成
+	status := model.Status{}
+	h.DB.Where("statuses.default = ?", 1).First(&status)
+
 	newTestRunCases := []model.TestRunCase{}
 	for _, testCaseID := range req.TestCaseIDs {
 		if _, exists := existingTestCaseIDs[testCaseID]; !exists {
 			newTestRunCase := model.TestRunCase{
 				TestRunID:  req.TestRunID,
 				TestCaseID: testCaseID,
-				StatusID:   1, // 初期ステータス
+				StatusID:   status.ID,
 			}
 			newTestRunCases = append(newTestRunCases, newTestRunCase)
 		}

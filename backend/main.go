@@ -5,11 +5,13 @@ import (
 	"backend/model"
 	"backend/router"
 	"backend/util"
+	"encoding/json"
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -62,6 +64,7 @@ func main() {
 	}
 
 	// ハンドラーの初期化
+	statusHandler := handler.NewStatusHandler(db)
 	authHandler := handler.NewAuthHandler(db)
 	memberHandler := handler.NewMemberHandler(db, emailSender)
 	testCaseHandler := handler.NewTestCaseHandler(db)
@@ -73,6 +76,7 @@ func main() {
 	// ルータの初期化
 	r := router.NewRouter(
 		db,
+		statusHandler,
 		authHandler,
 		memberHandler,
 		testCaseHandler,
@@ -82,6 +86,7 @@ func main() {
 		milestoneHandler,
 	)
 	createInitialUser(db, emailSender)
+	createInitialStatus(db)
 
 	// サーバを起動
 	r.Run(":8000")
@@ -113,6 +118,24 @@ func createInitialUser(db *gorm.DB, sender util.EmailSender) {
 		body := "Welcome " + user.Name + " Your Password is " + tempPassword
 		if err := sender.SendMail([]string{user.Email}, subject, body); err != nil {
 			log.Fatalf("初期ユーザーの招待に失敗しました: %v", err)
+		}
+	}
+}
+
+func createInitialStatus(db *gorm.DB) {
+	var count int64
+	db.Model(&model.Status{}).Count(&count)
+	if count == 0 {
+		var statuses []model.Status
+		absPath, _ := filepath.Abs("config/initial_statuses.json") // 正しいパスに置き換えてください
+		byteValue, err := os.ReadFile(absPath)
+		if err != nil {
+			log.Fatalf("Error reading statuses file: %v", err)
+		}
+		json.Unmarshal(byteValue, &statuses)
+
+		for _, status := range statuses {
+			db.Create(&status)
 		}
 	}
 }

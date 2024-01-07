@@ -53,7 +53,7 @@ const TestPlanList: React.FC = () => {
     const [newTestPlan, setNewTestPlan] = useState({
         project_id: projectId,
         title: '',
-        status: 'Active',
+        status: 'NotExecuted',
         created_by_id: user.id,
         updated_by_id: user.id
     });
@@ -98,7 +98,7 @@ const TestPlanList: React.FC = () => {
                 setNewTestPlan({
                     project_id: projectId,
                     title: '',
-                    status: 'Active',
+                    status: 'NotExecuted',
                     created_by_id: user.id,
                     updated_by_id: user.id
                 });

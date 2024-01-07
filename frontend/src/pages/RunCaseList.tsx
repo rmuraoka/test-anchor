@@ -104,7 +104,7 @@ const RunCaseList: React.FC = () => {
     const {project_code, test_run_id} = useParams();
     const {t} = useTranslation();
     const apiRequest = useApiRequest();
-
+    const [statuses, setStatuses] = useState<Status[]>([]);
 
     // APIからテストケースを取得
     const fetchTestCases = async () => {
@@ -118,6 +118,16 @@ const RunCaseList: React.FC = () => {
             setOnlyTestSuites(data.folders)
         } catch (error) {
             console.error('Error fetching TestCases:', error);
+        }
+    };
+
+    const fetchStatuses = async () => {
+        try {
+            const response = await apiRequest(`/protected/statuses`);
+            const data = await response.json();
+            setStatuses(data.entities);
+        } catch (error) {
+            console.error('Error fetching Statuses:', error);
         }
     };
 
@@ -149,6 +159,7 @@ const RunCaseList: React.FC = () => {
 
     useEffect(() => {
         fetchTestCases();
+        fetchStatuses();
     }, [project_code]);
 
     const handleTestCaseClick = (testCase: TestRunCase) => {
@@ -375,12 +386,6 @@ const RunCaseList: React.FC = () => {
             </Box>
         ))
     );
-
-    const statuses = [
-        {id: 1, name: 'Untested', color: 'gray'},
-        {id: 2, name: 'Passed', color: 'green'},
-        {id: 3, name: 'Failure', color: 'red'},
-    ];
 
     const renderStatusOptions = () => {
         return statuses.map(status => (
