@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 )
 
@@ -205,6 +206,7 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 
 	testSuiteMap := make(map[uint][]model.TestRunCase)
 	testSuiteHierarchyMap := make(map[uint][]model.TestSuite)
+	addedTestSuites := make(map[uint]bool)
 	for _, trc := range testRunCases {
 		var testSuiteID uint
 		if trc.TestCase.TestSuiteID != nil {
@@ -218,7 +220,11 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 		}
 
 		testSuiteMap[testSuiteID] = append(testSuiteMap[testSuiteID], trc)
-		testSuiteHierarchyMap[parentID] = append(testSuiteHierarchyMap[parentID], testSuite)
+
+		if _, exists := addedTestSuites[testSuite.ID]; !exists {
+			testSuiteHierarchyMap[parentID] = append(testSuiteHierarchyMap[parentID], testSuite)
+			addedTestSuites[testSuite.ID] = true
+		}
 	}
 
 	topLevelTestSuites := []model.TestSuite{}
@@ -226,11 +232,26 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 		if testSuiteID != 0 {
 			var testSuite model.TestSuite
 			h.DB.First(&testSuite, testSuiteID)
-			topLevelTestSuites = append(topLevelTestSuites, testSuite)
+			if testSuite.ParentID == nil {
+				topLevelTestSuites = append(topLevelTestSuites, testSuite)
+			}
 		}
 	}
 
-	jsonTestSuites := convertToTestRunCaseTestSuites(topLevelTestSuites, testSuiteMap)
+	var allTestSuites []model.TestSuite
+	resultAllSuites := h.DB.Where("project_id = ?", testRun.ProjectID).Find(&allTestSuites)
+	if resultAllSuites.Error != nil {
+		log.Fatal("Failed to retrieve TestSuites: ", result.Error)
+	}
+	childTestSuitesMap := make(map[uint][]model.TestSuite)
+	for _, testSuite := range allTestSuites {
+		if testSuite.ParentID != nil {
+			parentID := *testSuite.ParentID
+			childTestSuitesMap[parentID] = append(childTestSuitesMap[parentID], testSuite)
+		}
+	}
+
+	jsonTestSuites := convertToTestRunCaseTestSuites(topLevelTestSuites, testSuiteMap, childTestSuitesMap)
 	jsonOnlyTestSuites := convertToJSONOnlyTestSuites(topLevelTestSuites, testSuiteHierarchyMap)
 
 	responseData := util.TestRunCasesResponseData{
@@ -245,7 +266,11 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 	c.JSON(http.StatusOK, responseData)
 }
 
-func convertToTestRunCaseTestSuites(testSuites []model.TestSuite, testRunCaseMap map[uint][]model.TestRunCase) []util.TestRunCasesTestSuite {
+func convertToTestRunCaseTestSuites(testSuites []model.TestSuite, testRunCaseMap map[uint][]model.TestRunCase, childTestSuitesMap map[uint][]model.TestSuite) []util.TestRunCasesTestSuite {
+	sort.Slice(testSuites, func(i, j int) bool {
+		return testSuites[i].OrderIndex < testSuites[j].OrderIndex
+	})
+
 	jsonTestSuites := []util.TestRunCasesTestSuite{}
 	for _, testSuite := range testSuites {
 		jsonTestRunCases := []util.TestRunCase{}
@@ -253,9 +278,12 @@ func convertToTestRunCaseTestSuites(testSuites []model.TestSuite, testRunCaseMap
 			jsonTestRunCases = append(jsonTestRunCases, convertToJSONTestRunCase(trc))
 		}
 
+		childTestSuites := childTestSuitesMap[testSuite.ID]
+
 		jsonTestSuites = append(jsonTestSuites, util.TestRunCasesTestSuite{
-			Name:      testSuite.Name,
-			TestCases: jsonTestRunCases,
+			Name:       testSuite.Name,
+			TestSuites: convertToTestRunCaseTestSuites(childTestSuites, testRunCaseMap, childTestSuitesMap),
+			TestCases:  jsonTestRunCases,
 		})
 	}
 	return jsonTestSuites

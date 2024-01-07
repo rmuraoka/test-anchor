@@ -167,9 +167,10 @@ func TestGetTestRunCases(t *testing.T) {
 	updatedByUserID := 7
 	testRunCaseID := 8
 	commentID := 9
+	projectID := 10
 
-	testRunRow := sqlmock.NewRows([]string{"id", "title"}).
-		AddRow(testRunID, "Test Run Title")
+	testRunRow := sqlmock.NewRows([]string{"id", "title", "project_id"}).
+		AddRow(testRunID, "Test Run Title", projectID)
 	mock.ExpectQuery("^SELECT \\* FROM `test_runs`").
 		WithArgs(testRunID).
 		WillReturnRows(testRunRow)
@@ -220,6 +221,10 @@ func TestGetTestRunCases(t *testing.T) {
 		AddRow(3, "TestSuites Name", 1, nil)
 	mock.ExpectQuery("^SELECT \\* FROM `test_suites`").
 		WithArgs(testSuiteID).
+		WillReturnRows(testSuiteNewRows)
+
+	mock.ExpectQuery("^SELECT \\* FROM `test_suites`").
+		WithArgs(projectID).
 		WillReturnRows(testSuiteNewRows)
 
 	// Set up HTTP request
