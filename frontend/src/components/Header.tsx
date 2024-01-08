@@ -45,9 +45,6 @@ const Header: React.FC<HeaderProps> = ({project_code, is_show_menu}) => {
     const navigateToSetting = () => {
         navigate('/settings');
     };
-    const navigateToUserAccounts = () => {
-        navigate('/user/accounts');
-    };
     return (
         <Flex
             as="header"
@@ -122,7 +119,6 @@ const Header: React.FC<HeaderProps> = ({project_code, is_show_menu}) => {
                         </Flex>
                     </MenuButton>
                     <MenuList>
-                        <MenuItem onClick={() => navigateToUserAccounts()}>Account</MenuItem>
                         <MenuItem onClick={handleLogout}>Logout</MenuItem>
                     </MenuList>
                 </Menu>

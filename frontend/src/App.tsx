@@ -12,6 +12,7 @@ import LoginPage from './pages/Login'
 import SettingsPage from './pages/Settings';
 import SettingMembersPage from './pages/SettingMembers';
 import SettingPasswordPage from './pages/SettingPassword';
+import SettingLanguagePage from './pages/SettingLanguage';
 import PrivateRoute from './PrivateRoute';
 
 const App = () => {
@@ -23,6 +24,7 @@ const App = () => {
                 <Route path="/settings" element={<PrivateRoute><SettingsPage/></PrivateRoute>}/>
                 <Route path="/settings/members" element={<PrivateRoute><SettingMembersPage/></PrivateRoute>}/>
                 <Route path="/settings/password" element={<PrivateRoute><SettingPasswordPage/></PrivateRoute>}/>
+                <Route path="/settings/language" element={<PrivateRoute><SettingLanguagePage/></PrivateRoute>}/>
                 <Route path="/:project_code/cases" element={<PrivateRoute><CaseListPage/></PrivateRoute>}/>
                 <Route path="/:project_code/plans/:test_plan_id"
                        element={<PrivateRoute><TestPlanPage/></PrivateRoute>}/>

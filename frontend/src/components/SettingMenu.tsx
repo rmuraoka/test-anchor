@@ -3,6 +3,7 @@ import {Box, Divider, Flex, Icon, Link, Text, VStack} from "@chakra-ui/react";
 import {FaUser} from "react-icons/fa";
 import {LockIcon} from "@chakra-ui/icons";
 import {useTranslation} from "react-i18next";
+import {AiOutlineGlobal} from "react-icons/ai";
 
 const Header: React.FC = () => {
     const { t } = useTranslation();
@@ -21,6 +22,12 @@ const Header: React.FC = () => {
                     <Flex align="center">
                         <LockIcon mr={2} />
                         <Text fontSize="lg" fontWeight="bold">{t('change_password')}</Text>
+                    </Flex>
+                </Link>
+                <Link href="/settings/language">
+                    <Flex align="center">
+                        <AiOutlineGlobal/>
+                        <Text ml={2} fontSize="lg" fontWeight="bold">{t('language')}</Text>
                     </Flex>
                 </Link>
             </VStack>

@@ -44,6 +44,7 @@
   "failed_to_add_new_test_plan": "新しいテストプランの追加に失敗しました。",
   "failed_to_add_new_test_run": "新しいテストランの追加に失敗しました。",
   "failed_to_add_new_test_suite": "新しいテストスイートの追加に失敗しました。",
+  "failed_to_change_language": "言語設定の変更に失敗しました。",
   "failed_to_delete_test_case": "テストケースの削除に失敗しました。",
   "failed_to_delete_test_suite": "テストスイートの削除に失敗しました。",
   "failed_to_update_milestone": "マイルストーンの更新に失敗しました。",
@@ -57,6 +58,8 @@
   "milestone_update_failed": "マイルストーン更新に失敗しました。",
   "milestone_updated": "マイルストーンが更新されました。",
   "milestone": "マイルストーン",
+  "language": "言語設定",
+  "language_changed_successfully": "言語設定の更新に成功しました。",
   "last_updated_by": "最終更新者",
   "name": "名前",
   "new_comment_added": "新しいコメントが追加されました。",
@@ -95,10 +98,12 @@
   "error_updating_password": "パスワードの更新に失敗しました。",
   "member_management": "メンバー管理",
   "change_password": "パスワード変更",
+  "change": "変更",
   "current_password": "現在のパスワード",
   "new_password": "新しいパスワード",
   "confirm_new_password": "新しいパスワード（確認）",
   "open_test_case": "テストケースを開く",
   "close_test_case": "テストケースを閉じる",
-  "confirm_resend_email": "パスワードを初期化し、招待メールを再送信します。よろしいですか？"
+  "confirm_resend_email": "パスワードを初期化し、招待メールを再送信します。よろしいですか？",
+  "select_language": "言語の選択"
 }

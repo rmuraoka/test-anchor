@@ -44,6 +44,7 @@
   "failed_to_add_new_test_plan": "Failed to add a new test plan.",
   "failed_to_add_new_test_run": "Failed to add a new test run.",
   "failed_to_add_new_test_suite": "Failed to add a new test suite.",
+  "failed_to_change_language": "Failed to change language setting.",
   "failed_to_delete_test_case": "Failed to delete the test case.",
   "failed_to_delete_test_suite": "Failed to delete the test suite.",
   "failed_to_update_milestone": "Failed to update the milestone.",
@@ -57,6 +58,8 @@
   "milestone_update_failed": "Failed to update the milestone.",
   "milestone_updated": "Milestone has been updated.",
   "milestone": "Milestone",
+  "language": "Language",
+  "language_changed_successfully": "language setting changed successfully.",
   "last_updated_by": "Last Updated By",
   "name": "Name",
   "new_comment_added": "A new comment has been added.",
@@ -95,10 +98,12 @@
   "error_updating_password": "Failed to update password.",
   "member_management": "Member Management",
   "change_password": "Change Password",
+  "change": "Change",
   "current_password": "Current Password",
   "new_password": "New Password",
   "confirm_new_password": "Confirm New Password",
   "open_test_case": "Open Test Case",
   "close_test_case": "Close Test Case",
-  "confirm_resend_email": "Would you like to reset your password and resend the invitation email?"
+  "confirm_resend_email": "Would you like to reset your password and resend the invitation email?",
+  "select_language": "Select Language"
 }
