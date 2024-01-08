@@ -18,6 +18,7 @@
   "comments": "コメント",
   "confirm_delete": "削除しますか？",
   "content": "内容",
+  "created_by": "作成者",
   "deactivate_member": "メンバーを停止する",
   "delete": "削除",
   "delete_test_case": "テストケースの削除",

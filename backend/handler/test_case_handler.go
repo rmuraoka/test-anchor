@@ -66,6 +66,8 @@ func (h *TestCaseHandler) GetTestCases(c *gin.Context) {
 			return db.Order("test_cases.order_index ASC, test_cases.id ASC")
 		}).
 		Preload("TestCases.Milestone").
+		Preload("TestCases.CreatedBy").
+		Preload("TestCases.UpdatedBy").
 		Preload("TestSuites.TestCases", func(db *gorm.DB) *gorm.DB {
 			return db.Order("test_cases.order_index ASC, test_cases.id ASC")
 		}).

@@ -1280,6 +1280,12 @@ const CaseList: React.FC = () => {
                                                 milestones.find(milestone => milestone.id === selectedTestCase.milestone?.id)?.title || 'None'
                                             }`}
                                         </Text>
+                                        <Text fontSize="md" color="gray.600">
+                                            {t('created_by')}: {selectedTestCase?.created_by.name}
+                                        </Text>
+                                        <Text fontSize="md" color="gray.600">
+                                            {t('last_updated_by')}: {selectedTestCase?.updated_by.name}
+                                        </Text>
                                     </>
                                 )}
                             </VStack>
