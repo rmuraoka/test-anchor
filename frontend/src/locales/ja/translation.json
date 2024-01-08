@@ -1,5 +1,7 @@
 {
   "actions": "操作",
+  "activate": "停止を解除",
+  "activate_member": "メンバーを停止を解除する",
   "add": "追加",
   "add_case": "テストケースを追加",
   "add_comment": "コメントを追加...",
@@ -16,9 +18,12 @@
   "complete": "テストを完了にする",
   "completed_at": "完了日",
   "comments": "コメント",
+  "confirm_activate": "停止を解除しますか",
+  "confirm_deactivate": "停止しますか",
   "confirm_delete": "削除しますか？",
   "content": "内容",
   "created_by": "作成者",
+  "deactivate": "停止",
   "deactivate_member": "メンバーを停止する",
   "delete": "削除",
   "delete_test_case": "テストケースの削除",
@@ -91,5 +96,6 @@
   "new_password": "新しいパスワード",
   "confirm_new_password": "新しいパスワード（確認）",
   "open_test_case": "テストケースを開く",
-  "close_test_case": "テストケースを閉じる"
+  "close_test_case": "テストケースを閉じる",
+  "confirm_resend_email": "パスワードを初期化し、招待メールを再送信します。よろしいですか？"
 }

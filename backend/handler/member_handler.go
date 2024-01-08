@@ -143,6 +143,12 @@ func (h *MemberHandler) PutMember(c *gin.Context) {
 		return
 	}
 
+	resendPassword, _ := strconv.ParseBool(c.Query("resend_password"))
+	renewalPassword := util.GenerateTempPassword(10)
+	if resendPassword {
+		updatedMember.Password = renewalPassword
+	}
+
 	if updatedMember.Password != "" {
 		tempPassword := updatedMember.Password
 		hashedPassword, err := util.HashPassword(tempPassword)
@@ -155,6 +161,30 @@ func (h *MemberHandler) PutMember(c *gin.Context) {
 	if result := h.DB.Model(&model.User{}).Where("id = ?", id).Updates(updatedMember); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
+	}
+
+	if resendPassword {
+		var user model.User
+		if result := h.DB.First(&user, id); result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				handleError(c, http.StatusUnauthorized, "User not found", result.Error)
+				return
+			}
+			handleError(c, http.StatusInternalServerError, "Failed to retrieve project", result.Error)
+			return
+		}
+
+		subject := "Your Account"
+		body := "Welcome " + user.Name + " Your Password is " + renewalPassword
+		to := []string{user.Email}
+
+		// メール送信の実行
+		err = h.EmailSender.SendMail(to, subject, body)
+		if err != nil {
+			log.Printf("ユーザーの招待に失敗しました: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email"})
+			return
+		}
 	}
 
 	memberResponses := util.Member{

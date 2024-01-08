@@ -1,5 +1,7 @@
 {
   "actions": "Actions",
+  "activate": "Activate",
+  "activate_member": "Activate Member",
   "add": "Add",
   "add_case": "Add case",
   "add_comment": "Add a comment...",
@@ -16,9 +18,12 @@
   "complete": "Mark the test as complete",
   "completed_at": "End Date",
   "comments": "Comments",
+  "confirm_activate": "Are you sure you want to activate?",
+  "confirm_deactivate": "Are you sure you want to deactivate?",
   "confirm_delete": "Are you sure you want to delete?",
   "content": "Content",
   "created_by": "Created By",
+  "deactivate": "Deactivate",
   "deactivate_member": "Deactivate member",
   "delete": "Delete",
   "delete_test_case": "Delete test case",
@@ -91,5 +96,6 @@
   "new_password": "New Password",
   "confirm_new_password": "Confirm New Password",
   "open_test_case": "Open Test Case",
-  "close_test_case": "Close Test Case"
+  "close_test_case": "Close Test Case",
+  "confirm_resend_email": "Would you like to reset your password and resend the invitation email?"
 }
