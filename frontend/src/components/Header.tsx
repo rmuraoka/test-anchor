@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({project_code, is_show_menu}) => {
         >
             <Flex align="center" mr={5}>
                 <Heading as="h1" size="lg" letterSpacing="tighter">
-                    MyApp
+                    Test Anchor
                 </Heading>
                 <IconButton
                     aria-label="Home"
