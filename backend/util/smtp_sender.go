@@ -10,11 +10,12 @@ import (
 )
 
 type SMTPSender struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	UseTLS   bool
+	Host      string
+	Port      int
+	Username  string
+	Password  string
+	UseTLS    bool
+	FromEmail string
 }
 
 func (s *SMTPSender) SendMail(to []string, subject, body string) error {
@@ -22,26 +23,52 @@ func (s *SMTPSender) SendMail(to []string, subject, body string) error {
 
 	auth := smtp.PlainAuth("", s.Username, s.Password, s.Host)
 
-	msg := []byte("From: " + s.Username + "\r\n" +
+	msg := []byte("From: " + s.FromEmail + "\r\n" +
 		"To: " + strings.Join(to, ", ") + "\r\n" +
 		"Subject: " + subject + "\r\n\r\n" +
 		body)
 
-	// TLSを使用する場合
 	if s.UseTLS {
-		tlsConfig := &tls.Config{
-			ServerName:         s.Host,
-			InsecureSkipVerify: false,
+		var client *smtp.Client
+		var err error
+
+		// ポート587の場合、通常のSMTP接続を開始し、StartTLSを使用してアップグレード
+		if s.Port == 587 {
+			conn, err := smtp.Dial(addr)
+			if err != nil {
+				return err
+			}
+			defer conn.Close()
+
+			tlsConfig := &tls.Config{
+				ServerName:         s.Host,
+				InsecureSkipVerify: false,
+			}
+
+			if err = conn.StartTLS(tlsConfig); err != nil {
+				return err
+			}
+			client = conn
+		} else if s.Port == 465 { // ポート465の場合、直接TLS接続を開始
+			tlsConfig := &tls.Config{
+				ServerName:         s.Host,
+				InsecureSkipVerify: false,
+			}
+
+			conn, err := tls.Dial("tcp", addr, tlsConfig)
+			if err != nil {
+				return err
+			}
+			defer conn.Close()
+
+			client, err = smtp.NewClient(conn, s.Host)
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("unsupported port for TLS: %d", s.Port)
 		}
 
-		conn, err := tls.Dial("tcp", addr, tlsConfig)
-		if err != nil {
-			return err
-		}
-		client, err := smtp.NewClient(conn, s.Host)
-		if err != nil {
-			return err
-		}
 		defer client.Close()
 
 		// SMTP認証を行う
@@ -50,7 +77,7 @@ func (s *SMTPSender) SendMail(to []string, subject, body string) error {
 		}
 
 		// メール送信
-		if err = client.Mail(s.Username); err != nil {
+		if err = client.Mail(s.FromEmail); err != nil {
 			return err
 		}
 		if err = client.Rcpt(strings.Join(to, ",")); err != nil {
@@ -78,5 +105,7 @@ func (s *SMTPSender) SendMail(to []string, subject, body string) error {
 func (s *SMTPSender) sendMailWithoutTLS(to []string, subject, body string, addr string) error {
 	msg := []byte(fmt.Sprintf("To: %s\nSubject: %s\n\n%s", strings.Join(to, ","), subject, body))
 
-	return smtp.SendMail(addr, nil, s.Username, to, msg)
+	fmt.Println(addr)
+
+	return smtp.SendMail(addr, nil, s.FromEmail, to, msg)
 }

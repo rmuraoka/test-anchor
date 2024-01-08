@@ -58,12 +58,15 @@ func main() {
 	port, _ := strconv.Atoi(os.Getenv("MAIL_PORT"))
 	username := os.Getenv("MAIL_USERNAME")
 	password := os.Getenv("MAIL_PASSWORD")
+	fromEmail := os.Getenv("FROM_EMAIL")
+	useTLS, _ := strconv.ParseBool(os.Getenv("USE_TLS"))
 	emailSender := &util.SMTPSender{
-		Host:     host,
-		Port:     port,
-		Username: username,
-		Password: password,
-		UseTLS:   false,
+		Host:      host,
+		Port:      port,
+		Username:  username,
+		Password:  password,
+		FromEmail: fromEmail,
+		UseTLS:    useTLS,
 	}
 
 	// ハンドラーの初期化
