@@ -17,8 +17,11 @@ import (
 )
 
 func main() {
-	// DSN (Data Source Name) を定義
-	dsn := "user:password@tcp(db:3306)/testanchorDB?charset=utf8mb4&parseTime=True&loc=Local"
+	dbUsername := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DB_NAME")
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUsername, dbPassword, dbHost, dbName)
 	var db *gorm.DB
 	var err error
 	// 最大試行回数
