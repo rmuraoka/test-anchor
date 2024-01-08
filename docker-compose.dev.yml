@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  backend:
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    volumes:
+      - ./frontend:/front
+
+  db:
+    volumes:
+      - db-data:/var/lib/mysql
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  db-data:
+    driver: local
+
+networks:
+  network:
+    driver: bridge
