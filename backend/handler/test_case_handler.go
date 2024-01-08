@@ -224,6 +224,11 @@ func (h *TestCaseHandler) DeleteTestCase(c *gin.Context) {
 		return
 	}
 
+	if result := h.DB.Where("test_case_id = ?", id).Delete(&model.TestRunCase{}); result.Error != nil {
+		handleError(c, http.StatusInternalServerError, "Failed to delete test run case", result.Error)
+		return
+	}
+
 	c.Status(http.StatusNoContent)
 }
 
@@ -283,7 +288,17 @@ func (h *TestCaseHandler) DeleteTestSuite(c *gin.Context) {
 	}
 
 	if result := h.DB.Delete(&model.TestSuite{}, id); result.Error != nil {
+		handleError(c, http.StatusInternalServerError, "Failed to delete test suite", result.Error)
+		return
+	}
+
+	if result := h.DB.Where("test_suite_id = ?", id).Delete(&model.TestCase{}); result.Error != nil {
 		handleError(c, http.StatusInternalServerError, "Failed to delete test case", result.Error)
+		return
+	}
+
+	if result := h.DB.Where("test_case_id IN (SELECT id FROM test_cases WHERE test_suite_id = ?)", id).Delete(&model.TestRunCase{}); result.Error != nil {
+		handleError(c, http.StatusInternalServerError, "Failed to delete test run case", result.Error)
 		return
 	}
 

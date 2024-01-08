@@ -88,6 +88,7 @@ interface TestSuiteHeaderProps {
     testSuiteId: number;
     onAddCase: (testSuiteId: number) => void;
     onAddSuite: (testSuiteId: number | null) => void;
+    onDeleteSuite: (testSuiteId: number) => void;
 }
 
 interface NewTestSuite {
@@ -164,7 +165,9 @@ const CaseList: React.FC = () => {
     } = useDisclosure();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const {isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose} = useDisclosure();
+    const {isOpen: isTestSuiteDeleteModalOpen, onOpen: onTestSuiteDeleteModalOpen, onClose: onTestSuiteDeleteModalClose} = useDisclosure();
     const [deletingTestCaseId, setDeletingTestCaseId] = useState<number | null>(null);
+    const [deletingTestSuiteId, setDeletingTestSuiteId] = useState<number | null>(null);
     const [projectId, setProjectId] = useState<number>(0);
     const [editMode, setEditMode] = useState(false); // 編集モードの状態を追加
     const [testSuites, setTestSuites] = useState<TestSuite[]>([]);
@@ -877,6 +880,42 @@ const CaseList: React.FC = () => {
         }
     };
 
+    const handleDeleteTestSuite = async (id: number) => {
+        try {
+            // 削除確認が行われた後のAPIリクエスト
+            const response = await apiRequest(`/protected/suites/${id}`, {
+                method: 'DELETE'
+            });
+            // レスポンスがOKの場合、状態を更新してリストから削除
+            if (response.ok) {
+                // ユーザーに削除が成功したことを通知
+                toast({
+                    title: t('test_suite_deleted'),
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
+                fetchTestCases();
+                fetchMilestones();
+            } else {
+                // レスポンスがOKでない場合、エラーをスロー
+                throw new Error(t('failed_to_delete_test_suite'));
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
     const onDelete = (testCaseId: React.SetStateAction<number | null>) => {
         setDeletingTestCaseId(testCaseId);
         onDeleteModalOpen();
@@ -938,7 +977,7 @@ const CaseList: React.FC = () => {
         </Table>
     );
 
-    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title, testSuiteId, onAddCase, onAddSuite}) => {
+    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title, testSuiteId, onAddCase, onAddSuite, onDeleteSuite}) => {
         return (
             <Flex justifyContent="space-between" alignItems="center" mb={4}>
                 <Flex alignItems="center">
@@ -972,6 +1011,14 @@ const CaseList: React.FC = () => {
                         size="sm"
                         ml={2}
                         onClick={() => onAddSuite(testSuiteId)}
+                    />
+                    <IconButton
+                        aria-label={t('delete_test_suite')}
+                        icon={<DeleteIcon/>}
+                        colorScheme="gray"
+                        size="sm"
+                        ml={2}
+                        onClick={() => onDeleteSuite(testSuiteId)}
                     />
                 </Flex>
             </Flex>
@@ -1060,6 +1107,10 @@ const CaseList: React.FC = () => {
                         onAddSuite={(id) => {
                             setNewTestSuite({...newTestSuite, parent_id: id});
                             onTestSuiteAddModalOpen();
+                        }}
+                        onDeleteSuite={(id) => {
+                            setDeletingTestSuiteId(id)
+                            onTestSuiteDeleteModalOpen();
                         }}
                     />
                     <Box mb={4}>
@@ -1181,6 +1232,25 @@ const CaseList: React.FC = () => {
                                         <Button colorScheme="red" onClick={() => {
                                             if (deletingTestCaseId) handleDeleteTestCase(deletingTestCaseId);
                                             onDeleteModalClose();
+                                        }}>
+                                            {t('delete')}
+                                        </Button>
+                                        <Button ml={2} onClick={onDeleteModalClose}>{t('cancel')}</Button>
+                                    </ModalFooter>
+                                </ModalContent>
+                            </Modal>
+                            <Modal isOpen={isTestSuiteDeleteModalOpen} onClose={onTestSuiteDeleteModalClose}>
+                                <ModalOverlay/>
+                                <ModalContent>
+                                    <ModalHeader>{t('delete_test_suite')}</ModalHeader>
+                                    <ModalCloseButton/>
+                                    <ModalBody>
+                                        <Text>{t('confirm_delete')}</Text>
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button colorScheme="red" onClick={() => {
+                                            if (deletingTestSuiteId) handleDeleteTestSuite(deletingTestSuiteId);
+                                            onTestSuiteDeleteModalClose();
                                         }}>
                                             {t('delete')}
                                         </Button>

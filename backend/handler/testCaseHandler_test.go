@@ -202,15 +202,16 @@ func TestDeleteTestCase(t *testing.T) {
 
 	id := 1
 
-	// トランザクションの開始を期待
 	mock.ExpectBegin()
-
-	// 論理削除のための UPDATE クエリを期待
 	mock.ExpectExec("^UPDATE `test_cases`").
 		WithArgs(sqlmock.AnyArg(), id).
 		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
 
-	// トランザクションのコミットを期待
+	mock.ExpectBegin()
+	mock.ExpectExec("^UPDATE `test_run_cases`").
+		WithArgs(sqlmock.AnyArg(), id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	r := gin.Default()
@@ -296,15 +297,22 @@ func TestDeleteTestSuites(t *testing.T) {
 
 	id := 1
 
-	// トランザクションの開始を期待
 	mock.ExpectBegin()
-
-	// 論理削除のための UPDATE クエリを期待
 	mock.ExpectExec("^UPDATE `test_suites`").
 		WithArgs(sqlmock.AnyArg(), id).
 		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
 
-	// トランザクションのコミットを期待
+	mock.ExpectBegin()
+	mock.ExpectExec("^UPDATE `test_cases`").
+		WithArgs(sqlmock.AnyArg(), id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	mock.ExpectBegin()
+	mock.ExpectExec("^UPDATE `test_run_cases`").
+		WithArgs(sqlmock.AnyArg(), id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	r := gin.Default()
