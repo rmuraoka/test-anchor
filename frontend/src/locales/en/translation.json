@@ -26,7 +26,9 @@
   "edit": "Edit",
   "edit_member": "Edit Member",
   "edit_milestone": "Edit Milestone",
+  "edit_test_plan": "Edit Test Plan",
   "edit_test_run": "Edit Test Run",
+  "edit_title": "Edit Title",
   "email_address": "Email Address",
   "error_occurred": "An error has occurred.",
   "failed_to_add_comment": "Failed to add a comment.",
@@ -38,6 +40,8 @@
   "failed_to_delete_test_case": "Failed to delete the test case.",
   "failed_to_update_milestone": "Failed to update the milestone.",
   "failed_to_update_test_case": "Failed to update the test case.",
+  "failed_to_update_test_plan": "Failed to update the test plan.",
+  "failed_to_update_test_run": "Failed to update the test run.",
   "failure_add_project": "Failed to add a new project.",
   "invite": "Invite",
   "invite_member": "Invite Member",
@@ -71,6 +75,7 @@
   "status_update_failed": "Failed to update the status.",
   "test_case_deleted": "Test case has been deleted.",
   "test_case_updated": "Test case has been updated.",
+  "test_plan_updated": "Test plan has been updated.",
   "test_cases_count": "Test Cases Count",
   "test_run_updated": "Test run has been updated.",
   "title": "Title",
@@ -83,5 +88,7 @@
   "change_password": "Change Password",
   "current_password": "Current Password",
   "new_password": "New Password",
-  "confirm_new_password": "Confirm New Password"
+  "confirm_new_password": "Confirm New Password",
+  "open_test_case": "Open Test Case",
+  "close_test_case": "Close Test Case"
 }

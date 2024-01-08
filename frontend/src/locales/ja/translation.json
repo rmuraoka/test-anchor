@@ -26,7 +26,9 @@
   "edit": "編集",
   "edit_member": "メンバーを編集",
   "edit_milestone": "マイルストーンを編集",
+  "edit_test_plan": "テストプランの編集",
   "edit_test_run": "テストランの編集",
+  "edit_title": "タイトルの編集",
   "email_address": "メールアドレス",
   "error_occurred": "エラーが発生しました。",
   "failed_to_add_comment": "コメントの追加に失敗しました。",
@@ -38,6 +40,8 @@
   "failed_to_delete_test_case": "テストケースの削除に失敗しました。",
   "failed_to_update_milestone": "マイルストーンの更新に失敗しました。",
   "failed_to_update_test_case": "テストケースの更新に失敗しました。",
+  "failed_to_update_test_plan": "テストプランの更新に失敗しました。",
+  "failed_to_update_test_run": "テストランの更新に失敗しました。",
   "failure_add_project": "新しいプロジェクトの追加に失敗しました。",
   "invite": "招待",
   "invite_member": "メンバーを招待する",
@@ -71,6 +75,7 @@
   "status_update_failed": "ステータス更新に失敗しました。",
   "test_case_deleted": "テストケースが削除されました。",
   "test_case_updated": "テストケースが更新されました。",
+  "test_plan_updated": "テストプランが更新されました。",
   "test_cases_count": "テストケース件数",
   "test_run_updated": "テストランが更新されました。",
   "title": "タイトル",
@@ -83,5 +88,7 @@
   "change_password": "パスワード変更",
   "current_password": "現在のパスワード",
   "new_password": "新しいパスワード",
-  "confirm_new_password": "新しいパスワード（確認）"
+  "confirm_new_password": "新しいパスワード（確認）",
+  "open_test_case": "テストケースを開く",
+  "close_test_case": "テストケースを閉じる"
 }

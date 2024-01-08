@@ -1,9 +1,12 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
     Box,
     Button,
     ButtonGroup,
     ChakraProvider,
+    Editable,
+    EditableInput,
+    EditablePreview,
     Flex,
     FormControl,
     FormLabel,
@@ -31,10 +34,19 @@ import {
     Tr,
     UnorderedList,
     useDisclosure,
+    useEditableControls,
     useToast,
     VStack
 } from '@chakra-ui/react';
-import {DeleteIcon, DragHandleIcon} from '@chakra-ui/icons';
+import {
+    CheckIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    CloseIcon,
+    DeleteIcon,
+    DragHandleIcon,
+    EditIcon
+} from '@chakra-ui/icons';
 import {SlFolder} from "react-icons/sl";
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
@@ -226,11 +238,42 @@ const CaseList: React.FC = () => {
                  opacity={isDragging ? 0.5 : 1}>
                 <HStack>
                     <DragHandleIcon mr={2}/>
-                    <Text>{testCase.title}</Text>
+                    <Editable defaultValue={testCase.title}
+                              display="flex"
+                              submitOnBlur={false}
+                              onSubmit={(newTitle) => handleUpdateTestCaseTitle(newTitle, testCase.id)}>
+                        <EditablePreview/>
+                        <EditableInput mr={2} onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                            }
+                        }}/>
+                        <EditableControls/>
+                    </Editable>
                 </HStack>
             </Box>
         );
     };
+
+    const EditableControls: React.FC = () => {
+        const {
+            isEditing,
+            getSubmitButtonProps,
+            getCancelButtonProps,
+            getEditButtonProps,
+        } = useEditableControls();
+
+        return isEditing ? (
+            <ButtonGroup justifyContent='center' size='sm'>
+                <IconButton aria-label={t('send')} icon={<CheckIcon/>} {...getSubmitButtonProps()}/>
+                <IconButton aria-label={t('cancel')} icon={<CloseIcon/>} {...getCancelButtonProps()}/>
+            </ButtonGroup>
+        ) : (
+            <Flex justifyContent='center'>
+                <IconButton aria-label={t('edit')} size='sm' icon={<EditIcon/>} {...getEditButtonProps()}/>
+            </Flex>
+        );
+    }
 
     const DroppableTestSuite: React.FC<DroppableTestSuiteProps> = ({testSuite, onDrop, children}) => {
         const ref = useRef<HTMLDivElement>(null);
@@ -577,7 +620,7 @@ const CaseList: React.FC = () => {
         }
     };
 
-    // APIからテストケースを取得
+// APIからテストケースを取得
     const fetchTestCases = async () => {
         try {
             const response = await apiRequest(`/protected/${project_code}/cases`);
@@ -605,9 +648,9 @@ const CaseList: React.FC = () => {
         fetchMilestones()
     }, [project_code]);
 
-    const handleTestCaseClick = (testCase: TestCase) => {
+    const handleTestCaseClick = (testCase: TestCase | null) => {
         setSelectedTestCase(testCase);
-    };
+    }
 
     const handleUpdateTestCase = async () => {
         if (selectedTestCase) {
@@ -647,6 +690,64 @@ const CaseList: React.FC = () => {
                     isClosable: true,
                 });
             }
+        }
+    };
+
+    const handleUpdateTestSuiteTitle = async (newTitle: string, testSuiteId: number) => {
+        try {
+            const response = await apiRequest(`/protected/suites/${testSuiteId}`, {
+                method: 'PUT',
+                body: JSON.stringify({name: newTitle, updated_by_id: user.id}),
+            });
+
+            if (response.ok) {
+                setEditMode(false);
+                fetchTestCases();
+                fetchMilestones();
+            } else {
+                throw new Error(t('failed_to_update_test_case'));
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const handleUpdateTestCaseTitle = async (newTitle: string, testCaseId: number) => {
+        try {
+            const response = await apiRequest(`/protected/cases/${testCaseId}`, {
+                method: 'PUT',
+                body: JSON.stringify({title: newTitle, updated_by_id: user.id}),
+            });
+
+            if (response.ok) {
+                setEditMode(false);
+                fetchTestCases();
+                fetchMilestones();
+            } else {
+                throw new Error(t('failed_to_update_test_case'));
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
         }
     };
 
@@ -791,21 +892,39 @@ const CaseList: React.FC = () => {
                                 <Td colSpan={100} backgroundColor="gray.100"/>
                             </Tr>
                         )}
-                        <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}
-                            onClick={() => handleTestCaseClick(testCase)}>
-                            <Td borderBottom="1px" borderColor="gray.200">
+                        <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}>
+                            <Td
+                                borderBottom="1px"
+                                borderColor="gray.200"
+                                maxWidth="500px"
+                                whiteSpace="normal"
+                            >
                                 <DraggableTestCase testCase={testCase} index={index} testSuiteId={testSuiteId}/>
                             </Td>
                             <Td textAlign="right">
                                 <IconButton
-                                    aria-label="Delete test case"
+                                    aria-label={t('delete_test_case')}
                                     icon={<DeleteIcon/>}
                                     size="sm"
+                                    mr={2}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onDelete(testCase.id);
                                     }}
                                 />
+                                {selectedTestCase && selectedTestCase.id === testCase.id ?
+                                    <IconButton
+                                        aria-label={t('open_test_case')}
+                                        icon={<ChevronLeftIcon/>}
+                                        size="sm"
+                                        onClick={() => handleTestCaseClick(null)}
+                                    /> :
+                                    <IconButton
+                                        aria-label={t('close_test_case')}
+                                        icon={<ChevronRightIcon/>}
+                                        size="sm"
+                                        onClick={() => handleTestCaseClick(testCase)}
+                                    />}
                             </Td>
                         </Tr>
                         {hoverIndex === index && hoverPosition === 'lower' && hoverSuiteId === testSuiteId && (
@@ -824,7 +943,18 @@ const CaseList: React.FC = () => {
             <Flex justifyContent="space-between" alignItems="center" mb={4}>
                 <Flex alignItems="center">
                     <Icon as={SlFolder} mr={2}/>
-                    <Text fontSize="lg" fontWeight="bold">{title}</Text>
+                    <Editable defaultValue={title}
+                              display="flex"
+                              submitOnBlur={false}
+                              onSubmit={(newTitle) => handleUpdateTestSuiteTitle(newTitle, testSuiteId)}>
+                        <EditablePreview fontSize="lg" fontWeight="bold"/>
+                        <EditableInput mr={2} onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                            }
+                        }}/>
+                        <EditableControls/>
+                    </Editable>
                 </Flex>
                 <Flex>
                     <IconButton
@@ -1159,6 +1289,7 @@ const CaseList: React.FC = () => {
             </ChakraProvider>
         </DndProvider>
     );
-};
+}
+
 
 export default CaseList;

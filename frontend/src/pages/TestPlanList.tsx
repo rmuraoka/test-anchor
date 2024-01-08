@@ -50,6 +50,7 @@ const TestPlanList: React.FC = () => {
     const [projectId, setProjectId] = useState<number>(0);
     const [testPlans, setTestPlan] = useState<TestPlan[]>([]);
     const {isOpen, onOpen, onClose} = useDisclosure();
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [newTestPlan, setNewTestPlan] = useState({
         project_id: projectId,
         title: '',
@@ -57,10 +58,15 @@ const TestPlanList: React.FC = () => {
         created_by_id: user.id,
         updated_by_id: user.id
     });
+    const [editTestPlan, setEditTestPlan] = useState<TestPlan | null>(null);
+    const openEditModal = (testPlan: TestPlan) => {
+        setEditTestPlan(testPlan);
+        setIsEditModalOpen(true);
+    };
     const [searchTerm, setSearchTerm] = useState('');
     const toast = useToast();
     const {project_code} = useParams();
-    const { t } = useTranslation();
+    const {t} = useTranslation();
     const apiRequest = useApiRequest();
 
     const fetchTestPlans = async () => {
@@ -122,6 +128,49 @@ const TestPlanList: React.FC = () => {
         }
     };
 
+    const handleEditTestPlan = async () => {
+        try {
+            if (!editTestPlan) {
+                return;
+            }
+            const response = await apiRequest(`/protected/plans/${editTestPlan.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({title: editTestPlan.title, updated_by_id: user.id})
+            });
+            if (response.ok) {
+                toast({
+                    title: t('test_plan_updated'),
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
+                setNewTestPlan({
+                    project_id: projectId,
+                    title: '',
+                    status: 'NotExecuted',
+                    created_by_id: user.id,
+                    updated_by_id: user.id
+                });
+                setIsEditModalOpen(false);
+                fetchTestPlans();
+            } else {
+                throw new Error(t('failed_to_update_test_plan'));
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
     return (
         <ChakraProvider>
             <Box bg="white" minH="100vh">
@@ -145,6 +194,7 @@ const TestPlanList: React.FC = () => {
                                 <Th>{t('started_at')}</Th>
                                 <Th>{t('completed_at')}</Th>
                                 <Th>{t('last_updated_by')}</Th>
+                                <Th>{t('action')}</Th>
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -162,6 +212,8 @@ const TestPlanList: React.FC = () => {
                                     <Td>{filteredTestPlan.started_at ? filteredTestPlan.started_at : "-"}</Td>
                                     <Td>{filteredTestPlan.completed_at ? filteredTestPlan.started_at : "-"}</Td>
                                     <Td>{filteredTestPlan.updated_by.name}</Td>
+                                    <Td><Button colorScheme="blue"
+                                                onClick={() => openEditModal(filteredTestPlan)}>{t('edit')}</Button></Td>
                                 </Tr>
                             ))}
                         </Tbody>
@@ -183,6 +235,28 @@ const TestPlanList: React.FC = () => {
                     <ModalFooter>
                         <Button colorScheme="blue" mr={3} onClick={handleAddTestPlan}>{t('add')}</Button>
                         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
+                <ModalOverlay/>
+                <ModalContent>
+                    <ModalHeader>{t('edit_test_plan')}</ModalHeader>
+                    <ModalCloseButton/>
+                    <ModalBody>
+                        <FormControl>
+                            <FormLabel>{t('title')}</FormLabel>
+                            <Input value={editTestPlan?.title || ''}
+                                   onChange={(e) => setEditTestPlan(editTestPlan ? {
+                                       ...editTestPlan,
+                                       title: e.target.value
+                                   } : null)}
+                            />
+                        </FormControl>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button colorScheme="blue" mr={3} onClick={handleEditTestPlan}>{t('update')}</Button>
+                        <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>{t('cancel')}</Button>
                     </ModalFooter>
                 </ModalContent>
             </Modal>

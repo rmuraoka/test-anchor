@@ -2,15 +2,20 @@ import React, {useEffect, useState} from 'react';
 import {
     Box,
     Button,
+    ButtonGroup,
     ChakraProvider,
     Checkbox,
     Container,
+    Editable,
+    EditableInput,
+    EditablePreview,
     Flex,
     FormControl,
     FormLabel,
     Heading,
     HStack,
     Icon,
+    IconButton,
     Input,
     Link,
     ListItem,
@@ -32,11 +37,12 @@ import {
     Tr,
     UnorderedList,
     useDisclosure,
+    useEditableControls,
     useToast,
     useToken,
     VStack
 } from '@chakra-ui/react';
-import {useNavigate, useParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
 import {
     ArcElement,
     CategoryScale,
@@ -56,7 +62,7 @@ import gfm from "remark-gfm";
 import Header from "../components/Header";
 import {useTranslation} from "react-i18next";
 import {useApiRequest} from "../components/UseApiRequest";
-import {ChevronLeftIcon, TimeIcon} from "@chakra-ui/icons";
+import {CheckIcon, CloseIcon, EditIcon, TimeIcon} from "@chakra-ui/icons";
 
 ChartJS.register(
     ArcElement,
@@ -159,7 +165,7 @@ const TestPlan: React.FC = () => {
     const [selectedTestRun, setSelectedTestRun] = useState<TestRun | null>(null); // 編集するテストラン
     const {isOpen: isEditModalOpen, onOpen: onEditModalOpen, onClose: onEditModalClose} = useDisclosure();
     const [selectedTestCaseIds, setSelectedTestCaseIds] = useState<number[]>([]); // 選択されたテストケースのID
-    const { t } = useTranslation();
+    const {t} = useTranslation();
     const apiRequest = useApiRequest();
     const [selectedCount, setSelectedCount] = useState(0);
     const isOverLimit = selectedCount > 10000;
@@ -342,6 +348,41 @@ const TestPlan: React.FC = () => {
             });
         }
     };
+    const handleSaveTitle  = async () => {
+        try {
+            if (!selectedTestRun) {
+                return;
+            }
+
+            const response = await apiRequest(`/protected/runs/${selectedTestRun.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({title: selectedTestRun.title, updated_by_id: user.id})
+            });
+            if (response.ok) {
+                toast({
+                    title: t('test_run_updated'),
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
+                fetchTestRuns();
+            } else {
+                throw new Error(t('failed_to_update_test_run'));
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
 
     const handleEditTestRun = (testRun: TestRun) => {
         setSelectedTestCaseIds(testRun.test_case_ids)
@@ -508,6 +549,26 @@ const TestPlan: React.FC = () => {
         );
     }
 
+    const EditableControls: React.FC = () => {
+        const {
+            isEditing,
+            getSubmitButtonProps,
+            getCancelButtonProps,
+            getEditButtonProps,
+        } = useEditableControls();
+
+        return isEditing ? (
+            <ButtonGroup justifyContent='center' size='sm'>
+                <IconButton aria-label={t('send')} icon={<CheckIcon/>} {...getSubmitButtonProps()}/>
+                <IconButton aria-label={t('cancel')} icon={<CloseIcon/>} {...getCancelButtonProps()}/>
+            </ButtonGroup>
+        ) : (
+            <Flex justifyContent='center'>
+                <IconButton aria-label={t('edit')} size='sm' icon={<EditIcon/>} {...getEditButtonProps()}/>
+            </Flex>
+        );
+    }
+
     return (
         <ChakraProvider>
             <Box bg="white" minH="100vh">
@@ -591,7 +652,26 @@ const TestPlan: React.FC = () => {
                     <ModalHeader>{t('edit_test_run')}</ModalHeader>
                     <ModalCloseButton/>
                     <ModalBody>
-                        <Flex h="80vh">
+                        <Editable defaultValue={selectedTestRun?.title}
+                                  display="flex"
+                                  submitOnBlur={false}
+                                  onSubmit={handleSaveTitle}
+                        >
+                            <EditablePreview/>
+                            <EditableInput width={300} mr={2} mb={2}
+                                           onKeyDown={(e) => {
+                                               if (e.key === 'Enter') {
+                                                   e.preventDefault();
+                                               }
+                                           }}
+                                           onChange={(e) => setSelectedTestRun(selectedTestRun ? {
+                                               ...selectedTestRun,
+                                               title: e.target.value
+                                           } : null)}
+                            />
+                            <EditableControls/>
+                        </Editable>
+                        <Flex h="75vh">
                             <Box w="20%" p={5} borderRight="1px" borderColor="gray.200">
                                 <Tree
                                     showLine
