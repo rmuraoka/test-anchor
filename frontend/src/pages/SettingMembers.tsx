@@ -49,6 +49,7 @@ const SettingMembers: React.FC = () => {
     const [editableMember, setEditableMember] = useState({id: 0, name: '', email: ''});
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [newMember, setNewMember] = useState({name: '', email: ''});
+    const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
     const toast = useToast();
     const { t } = useTranslation();
     const apiRequest = useApiRequest();
@@ -75,6 +76,7 @@ const SettingMembers: React.FC = () => {
             }
 
             setIsInviteModalOpen(false);
+            setIsSubmitDisabled(false);
             setNewMember({name: '', email: ''});
             toast({
                 title: t('member_invited_successfully'),
@@ -95,6 +97,7 @@ const SettingMembers: React.FC = () => {
                 body: JSON.stringify(editableMember)
             });
             setIsEditModalOpen(false);
+            setIsSubmitDisabled(false);
             fetchMembers();
         } catch (error) {
             console.error('Error updating member:', error);
@@ -108,6 +111,7 @@ const SettingMembers: React.FC = () => {
                 body: JSON.stringify({})
             });
             setIsConfirmResendModalOpen(false);
+            setIsSubmitDisabled(false);
             fetchMembers();
         } catch (error) {
             console.error('Error updating member:', error);
@@ -121,6 +125,7 @@ const SettingMembers: React.FC = () => {
                 body: JSON.stringify({status: "Deactivate"})
             });
             setIsConfirmLockModalOpen(false);
+            setIsSubmitDisabled(false);
             fetchMembers();
         } catch (error) {
             console.error('Error updating member:', error);
@@ -162,6 +167,11 @@ const SettingMembers: React.FC = () => {
     const handleActivateMember = (memberId: number) => {
         setTargetMemberId(memberId);
         setIsConfirmUnLockModalOpen(true);
+    };
+
+    const validateForm = () => {
+        const isFormValid = newMember.name && newMember.email;
+        setIsSubmitDisabled(!isFormValid);
     };
 
     return (
@@ -256,7 +266,7 @@ const SettingMembers: React.FC = () => {
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleUpdateMember}>{t('dupdate')}</Button>
+                        <Button colorScheme="blue" mr={3} onClick={handleUpdateMember}>{t('update')}</Button>
                         <Button variant="ghost" onClick={() => setIsEditModalOpen(false)}>{t('cancel')}</Button>
                     </ModalFooter>
                 </ModalContent>
@@ -267,19 +277,26 @@ const SettingMembers: React.FC = () => {
                     <ModalHeader>{t('invite_member')}</ModalHeader>
                     <ModalCloseButton/>
                     <ModalBody>
-                        <FormControl>
+                        <FormControl isRequired as="form" onSubmit={handleInvite}>
                             <FormLabel>{t('name')}</FormLabel>
                             <Input value={newMember.name}
-                                   onChange={(e) => setNewMember({...newMember, name: e.target.value})}/>
+                                   onChange={(e) => {
+                                       setNewMember({...newMember, name: e.target.value});
+                                       validateForm();
+                                   }}/>
                             <FormLabel>{t('email')}</FormLabel>
-                            <Input type="email" value={newMember.email}
-                                   onChange={(e) => setNewMember({...newMember, email: e.target.value})}/>
+                            <Input type="email" name="email" value={newMember.email}
+                                   onChange={(e) => {
+                                       setNewMember({...newMember, email: e.target.value});
+                                       validateForm();
+                                   }}/>
+                            <ModalFooter>
+                                <Button type="submit" colorScheme="blue" mr={3}
+                                        isDisabled={isSubmitDisabled}>{t('invite')}</Button>
+                                <Button variant="ghost" onClick={() => setIsInviteModalOpen(false)}>{t('cancel')}</Button>
+                            </ModalFooter>
                         </FormControl>
                     </ModalBody>
-                    <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleInvite}>{t('invite')}</Button>
-                        <Button variant="ghost" onClick={() => setIsInviteModalOpen(false)}>{t('cancel')}</Button>
-                    </ModalFooter>
                 </ModalContent>
             </Modal>
             <Modal isOpen={isConfirmLockModalOpen} onClose={() => setIsConfirmLockModalOpen(false)}>

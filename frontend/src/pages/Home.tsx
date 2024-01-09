@@ -41,6 +41,7 @@ const Home: React.FC = () => {
     const {isOpen, onOpen, onClose} = useDisclosure();
     const [newProject, setNewProject] = useState({title: '', code: '', description: ''});
     const [searchTerm, setSearchTerm] = useState('');
+    const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
     const toast = useToast();
     const apiRequest = useApiRequest();
 
@@ -79,6 +80,7 @@ const Home: React.FC = () => {
                     description: '',
                 });
                 onClose();
+                setIsSubmitDisabled(true);
                 fetchProjects();
             } else {
                 throw new Error(t('failure_add_project'));
@@ -98,6 +100,10 @@ const Home: React.FC = () => {
         }
     };
 
+    const validateForm = () => {
+        const isFormValid = newProject.title && newProject.code && newProject.description;
+        setIsSubmitDisabled(!isFormValid);
+    };
 
     return (
         <ChakraProvider>
@@ -142,20 +148,29 @@ const Home: React.FC = () => {
                     <ModalHeader>{t('add_project')}</ModalHeader>
                     <ModalCloseButton/>
                     <ModalBody>
-                        <FormControl>
+                        <FormControl isRequired>
                             <FormLabel>{t('project_name')}</FormLabel>
                             <Input value={newProject.title}
-                                   onChange={(e) => setNewProject({...newProject, title: e.target.value})}/>
+                                   onChange={(e) => {
+                                       setNewProject({...newProject, title: e.target.value});
+                                       validateForm();
+                                   }}/>
                             <FormLabel>{t('code')}</FormLabel>
                             <Input value={newProject.code}
-                                   onChange={(e) => setNewProject({...newProject, code: e.target.value})}/>
+                                   onChange={(e) => {
+                                       setNewProject({...newProject, code: e.target.value});
+                                       validateForm();
+                                   }}/>
                             <FormLabel>{t('description')}</FormLabel>
                             <Input value={newProject.description}
-                                   onChange={(e) => setNewProject({...newProject, description: e.target.value})}/>
+                                   onChange={(e) => {
+                                       setNewProject({...newProject, description: e.target.value});
+                                       validateForm();
+                                   }}/>
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleAddProject}>{t('add')}</Button>
+                        <Button colorScheme="blue" mr={3} onClick={handleAddProject} isDisabled={isSubmitDisabled}>{t('add')}</Button>
                         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
                     </ModalFooter>
                 </ModalContent>
