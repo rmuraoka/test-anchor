@@ -15,7 +15,7 @@ Usage instructions will be updated in accordance with the progress of the projec
 TestAnchor is an open-source project and welcomes contributions from the community. For details on how to contribute, please refer to [CONTRIBUTING.md](/CONTRIBUTING.md).
 
 ## License
-This project is published under the [GPL-3.0 License](/LICENSE).
+This project is published under the [MIT License](/LICENSE).
 
 ## Version Information
 Version information will be updated here as the project progresses.
