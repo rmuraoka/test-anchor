@@ -8,7 +8,7 @@ import {
     FormControl,
     FormLabel,
     Heading,
-    Icon,
+    Icon, IconButton,
     Input,
     Link,
     ListItem,
@@ -27,7 +27,7 @@ import {
     useToast,
     VStack
 } from '@chakra-ui/react';
-import {ChevronDownIcon, ChevronLeftIcon, TimeIcon} from '@chakra-ui/icons';
+import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, TimeIcon} from '@chakra-ui/icons';
 import {SlFolder} from "react-icons/sl";
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
@@ -162,7 +162,7 @@ const RunCaseList: React.FC = () => {
         fetchStatuses();
     }, [project_code]);
 
-    const handleTestCaseClick = (testCase: TestRunCase) => {
+    const handleTestCaseClick = (testCase: TestRunCase | null) => {
         setSelectedTestCase(testCase);
     };
 
@@ -343,10 +343,10 @@ const RunCaseList: React.FC = () => {
         <Table variant="simple">
             <Tbody>
                 {testRunCases.map(testRunCase => (
-                    <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testRunCase)}>
+                    <Tr cursor="pointer" _hover={{bg: "gray.100"}}>
                         <Td borderBottom="1px" borderColor="gray.200">{testRunCase.title}</Td>
                         <Td width="120px">
-                            <Flex justifyContent="flex-end">
+                            <Flex justifyContent="flex-end" alignItems="center">
                                 <Menu>
                                     <MenuButton as={Button} rightIcon={<ChevronDownIcon/>}
                                                 bg={`${testRunCase.status.color}.200`} width="100%">
@@ -356,6 +356,21 @@ const RunCaseList: React.FC = () => {
                                         {renderStatusOptions()}
                                     </MenuList>
                                 </Menu>
+                                <Box mx={2}>
+                                    {selectedTestCase && selectedTestCase.id === testRunCase.id ?
+                                        <IconButton
+                                            aria-label={t('open_test_case')}
+                                            icon={<ChevronLeftIcon/>}
+                                            size="sm"
+                                            onClick={() => handleTestCaseClick(null)}
+                                        /> :
+                                        <IconButton
+                                            aria-label={t('close_test_case')}
+                                            icon={<ChevronRightIcon/>}
+                                            size="sm"
+                                            onClick={() => handleTestCaseClick(testRunCase)}
+                                        />}
+                                </Box>
                             </Flex>
                         </Td>
                     </Tr>
