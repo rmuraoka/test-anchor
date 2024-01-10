@@ -192,7 +192,9 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 
 	var testRunCases []model.TestRunCase
 	result := h.DB.
-		Preload("TestCase.TestSuite").
+		Preload("TestCase.TestSuite", func(db *gorm.DB) *gorm.DB {
+			return db.Order("test_suites.order_index ASC, test_suites.id ASC")
+		}).
 		Preload("Status").
 		Preload("AssignedTo").
 		Preload("Comments.CreatedBy").
@@ -237,6 +239,13 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 			}
 		}
 	}
+
+	sort.Slice(topLevelTestSuites, func(i, j int) bool {
+		if topLevelTestSuites[i].OrderIndex == topLevelTestSuites[j].OrderIndex {
+			return topLevelTestSuites[i].ID < topLevelTestSuites[j].ID
+		}
+		return topLevelTestSuites[i].OrderIndex < topLevelTestSuites[j].OrderIndex
+	})
 
 	var allTestSuites []model.TestSuite
 	resultAllSuites := h.DB.Where("project_id = ?", testRun.ProjectID).Find(&allTestSuites)
