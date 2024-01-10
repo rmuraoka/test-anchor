@@ -275,6 +275,20 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 	c.JSON(http.StatusOK, responseData)
 }
 
+func hasTestCases(testSuiteID uint, testRunCaseMap map[uint][]model.TestRunCase, childTestSuitesMap map[uint][]model.TestSuite) bool {
+	if len(testRunCaseMap[testSuiteID]) > 0 {
+		return true
+	}
+
+	for _, childTestSuite := range childTestSuitesMap[testSuiteID] {
+		if hasTestCases(childTestSuite.ID, testRunCaseMap, childTestSuitesMap) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func convertToTestRunCaseTestSuites(testSuites []model.TestSuite, testRunCaseMap map[uint][]model.TestRunCase, childTestSuitesMap map[uint][]model.TestSuite) []util.TestRunCasesTestSuite {
 	sort.Slice(testSuites, func(i, j int) bool {
 		return testSuites[i].OrderIndex < testSuites[j].OrderIndex
@@ -282,6 +296,10 @@ func convertToTestRunCaseTestSuites(testSuites []model.TestSuite, testRunCaseMap
 
 	jsonTestSuites := []util.TestRunCasesTestSuite{}
 	for _, testSuite := range testSuites {
+		if !hasTestCases(testSuite.ID, testRunCaseMap, childTestSuitesMap) {
+			continue
+		}
+
 		jsonTestRunCases := []util.TestRunCase{}
 		for _, trc := range testRunCaseMap[testSuite.ID] {
 			jsonTestRunCases = append(jsonTestRunCases, convertToJSONTestRunCase(trc))

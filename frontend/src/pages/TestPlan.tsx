@@ -455,14 +455,14 @@ const TestPlan: React.FC = () => {
         );
     };
 
-    const renderTestSuites = (suites: TestSuite[], level = 0) => (
+    const renderTestSuites = (suites: TestSuite[]) => (
         suites.map(suite => (
-            <Box key={suite.name} mb={4} pl={`${level * 2}em`}>
+            <Box key={suite.name} mb={4} pl={`2em`}>
                 <TestSuiteHeader title={suite.name}/>
                 <Box mb={4}>
                     {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases)}
                 </Box>
-                {suite.test_suites && suite.test_suites.length > 0 && renderTestSuites(suite.test_suites, level + 1)}
+                {suite.test_suites && suite.test_suites.length > 0 && renderTestSuites(suite.test_suites)}
             </Box>
         ))
     );

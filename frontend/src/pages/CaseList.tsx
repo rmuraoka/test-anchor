@@ -1093,10 +1093,10 @@ const CaseList: React.FC = () => {
         onMoveTestSuiteOnNode(testSuiteToMove, testSuitesToMove, parentId);
     };
 
-    const renderTestSuites = (suites: TestSuite[], level = 0) => (
+    const renderTestSuites = (suites: TestSuite[]) => (
         suites.map(suite => (
             <DroppableTestSuite key={suite.id} testSuite={suite} onDrop={onMoveTestCaseOnTestSuite}>
-                <Box mb={4} pl={`${level * 2}em`}>
+                <Box mb={4} pl={`2em`}>
                     <TestSuiteHeader
                         title={suite.name}
                         testSuiteId={suite.id}
@@ -1122,7 +1122,7 @@ const CaseList: React.FC = () => {
                     {/* 再帰的に子のTestSuiteをレンダリング */}
                     {suite.test_suites && suite.test_suites.length > 0 && (
                         <Box>
-                            {renderTestSuites(suite.test_suites, level + 1)}
+                            {renderTestSuites(suite.test_suites)}
                         </Box>
                     )}
                 </Box>
