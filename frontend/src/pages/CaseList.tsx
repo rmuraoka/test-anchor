@@ -16,7 +16,11 @@ import {
     IconButton,
     Input,
     Link,
-    ListItem, Menu, MenuButton, MenuItem, MenuList,
+    ListItem,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuList,
     Modal,
     ModalBody,
     ModalCloseButton,
@@ -46,13 +50,14 @@ import {
     CloseIcon,
     DeleteIcon,
     DragHandleIcon,
-    EditIcon, HamburgerIcon
+    EditIcon,
+    HamburgerIcon
 } from '@chakra-ui/icons';
 import {SlFolder} from "react-icons/sl";
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
 import {Tree} from 'antd';
-import {PiFilePlus, PiFolderSimplePlus} from "react-icons/pi";
+import {PiFolderSimplePlus} from "react-icons/pi";
 import {useParams} from "react-router-dom";
 import Header from "../components/Header";
 import {useTranslation} from "react-i18next";
@@ -69,6 +74,7 @@ interface TestCase {
     milestone_id: number | null;
     milestone: Milestone | null;
     updated_by_id: number;
+    order_index: number | null;
 }
 
 interface TestSuite {
@@ -130,14 +136,6 @@ interface TreeDataItem {
     index?: number;
 }
 
-interface DroppableTreeNodeProps {
-    node: TreeDataItem;
-    index: number;
-    onDropTestCase: (item: DragItem, nodeKey: number) => void;
-    onDropTestSuite: (item: DragItem, nodeKey: number) => void;
-    onMoveNode: (item: DragItem, nodeKey: number | null) => void;
-}
-
 interface DroppableTreeProps {
     treeData: TreeDataItem[];
     onDropTestCase: (item: DragItem, nodeKey: number) => void;
@@ -166,7 +164,11 @@ const CaseList: React.FC = () => {
     } = useDisclosure();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const {isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose} = useDisclosure();
-    const {isOpen: isTestSuiteDeleteModalOpen, onOpen: onTestSuiteDeleteModalOpen, onClose: onTestSuiteDeleteModalClose} = useDisclosure();
+    const {
+        isOpen: isTestSuiteDeleteModalOpen,
+        onOpen: onTestSuiteDeleteModalOpen,
+        onClose: onTestSuiteDeleteModalClose
+    } = useDisclosure();
     const [deletingTestCaseId, setDeletingTestCaseId] = useState<number | null>(null);
     const [deletingTestSuiteId, setDeletingTestSuiteId] = useState<number | null>(null);
     const [projectId, setProjectId] = useState<number>(0);
@@ -180,7 +182,8 @@ const CaseList: React.FC = () => {
         title: '',
         content: '',
         created_by_id: user.id,
-        updated_by_id: user.id
+        updated_by_id: user.id,
+        order_index: 0,
     });
     const [newTestSuite, setNewTestSuite] = useState<NewTestSuite>({
         project_id: projectId,
@@ -274,7 +277,8 @@ const CaseList: React.FC = () => {
             </ButtonGroup>
         ) : (
             <Flex justifyContent='center'>
-                <IconButton variant="ghost" aria-label={t('edit')} size='sm' icon={<EditIcon/>} {...getEditButtonProps()}/>
+                <IconButton variant="ghost" aria-label={t('edit')} size='sm'
+                            icon={<EditIcon/>} {...getEditButtonProps()}/>
             </Flex>
         );
     }
@@ -779,7 +783,8 @@ const CaseList: React.FC = () => {
                     title: '',
                     content: '',
                     created_by_id: user.id,
-                    updated_by_id: user.id
+                    updated_by_id: user.id,
+                    order_index: 0
                 });
                 fetchTestCases();
             } else {
@@ -818,13 +823,10 @@ const CaseList: React.FC = () => {
                     isClosable: true,
                 });
                 onTestSuiteAddModalClose();
-                setNewTestCase({
+                setNewTestSuite({
                     project_id: projectId,
-                    test_suite_id: 0,
-                    title: '',
-                    content: '',
-                    created_by_id: user.id,
-                    updated_by_id: user.id
+                    parent_id: null,
+                    name: '',
                 });
                 fetchTestCases();
             } else {
@@ -982,7 +984,13 @@ const CaseList: React.FC = () => {
         </Table>
     );
 
-    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title, testSuiteId, onAddCase, onAddSuite, onDeleteSuite}) => {
+    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({
+                                                                 title,
+                                                                 testSuiteId,
+                                                                 onAddCase,
+                                                                 onAddSuite,
+                                                                 onDeleteSuite
+                                                             }) => {
         return (
             <Flex justifyContent="space-between" alignItems="center" mb={4}>
                 <Flex alignItems="center">
@@ -1005,17 +1013,17 @@ const CaseList: React.FC = () => {
                         as={IconButton}
                         size="sm"
                         aria-label="Options"
-                        icon={<HamburgerIcon />}
+                        icon={<HamburgerIcon/>}
                         variant="ghost"
                     />
                     <MenuList>
-                        <MenuItem icon={<AddIcon />} onClick={() => onAddCase(testSuiteId)}>
+                        <MenuItem icon={<AddIcon/>} onClick={() => onAddCase(testSuiteId)}>
                             {t('add_case')}
                         </MenuItem>
-                        <MenuItem icon={<AddIcon />} onClick={() => onAddSuite(testSuiteId)}>
+                        <MenuItem icon={<AddIcon/>} onClick={() => onAddSuite(testSuiteId)}>
                             {t('add_test_suite')}
                         </MenuItem>
-                        <MenuItem icon={<DeleteIcon />} onClick={() => onDeleteSuite(testSuiteId)}>
+                        <MenuItem icon={<DeleteIcon/>} onClick={() => onDeleteSuite(testSuiteId)}>
                             {t('delete_test_suite')}
                         </MenuItem>
                     </MenuList>
@@ -1100,7 +1108,11 @@ const CaseList: React.FC = () => {
                         title={suite.name}
                         testSuiteId={suite.id}
                         onAddCase={(id) => {
-                            setNewTestCase({...newTestCase, test_suite_id: id});
+                            setNewTestCase({
+                                ...newTestCase,
+                                test_suite_id: id,
+                                order_index: suite.test_cases !== undefined ? suite.test_cases.length : 0
+                            });
                             onTestCaseAddModalOpen();
                         }}
                         onAddSuite={(id) => {
