@@ -941,10 +941,11 @@ const CaseList: React.FC = () => {
                                 borderColor="gray.200"
                                 maxWidth="500px"
                                 whiteSpace="normal"
+                                paddingY="0"
                             >
                                 <DraggableTestCase testCase={testCase} index={index} testSuiteId={testSuiteId}/>
                             </Td>
-                            <Td textAlign="right">
+                            <Td textAlign="right" width="120px" paddingY="0">
                                 <IconButton
                                     aria-label={t('delete_test_case')}
                                     icon={<DeleteIcon/>}
