@@ -16,7 +16,7 @@ import {
     IconButton,
     Input,
     Link,
-    ListItem,
+    ListItem, Menu, MenuButton, MenuItem, MenuList,
     Modal,
     ModalBody,
     ModalCloseButton,
@@ -39,13 +39,14 @@ import {
     VStack
 } from '@chakra-ui/react';
 import {
+    AddIcon,
     CheckIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     CloseIcon,
     DeleteIcon,
     DragHandleIcon,
-    EditIcon
+    EditIcon, HamburgerIcon
 } from '@chakra-ui/icons';
 import {SlFolder} from "react-icons/sl";
 import ReactMarkdown from 'react-markdown';
@@ -273,7 +274,7 @@ const CaseList: React.FC = () => {
             </ButtonGroup>
         ) : (
             <Flex justifyContent='center'>
-                <IconButton aria-label={t('edit')} size='sm' icon={<EditIcon/>} {...getEditButtonProps()}/>
+                <IconButton variant="ghost" aria-label={t('edit')} size='sm' icon={<EditIcon/>} {...getEditButtonProps()}/>
             </Flex>
         );
     }
@@ -931,7 +932,8 @@ const CaseList: React.FC = () => {
                                 <Td colSpan={100} backgroundColor="gray.100"/>
                             </Tr>
                         )}
-                        <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}>
+                        <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}
+                            onClick={() => handleTestCaseClick(testCase)}>
                             <Td
                                 borderBottom="1px"
                                 borderColor="gray.200"
@@ -944,6 +946,7 @@ const CaseList: React.FC = () => {
                                 <IconButton
                                     aria-label={t('delete_test_case')}
                                     icon={<DeleteIcon/>}
+                                    variant="ghost"
                                     size="sm"
                                     mr={2}
                                     onClick={(e) => {
@@ -954,12 +957,14 @@ const CaseList: React.FC = () => {
                                 {selectedTestCase && selectedTestCase.id === testCase.id ?
                                     <IconButton
                                         aria-label={t('open_test_case')}
+                                        variant="ghost"
                                         icon={<ChevronLeftIcon/>}
                                         size="sm"
                                         onClick={() => handleTestCaseClick(null)}
                                     /> :
                                     <IconButton
                                         aria-label={t('close_test_case')}
+                                        variant="ghost"
                                         icon={<ChevronRightIcon/>}
                                         size="sm"
                                         onClick={() => handleTestCaseClick(testCase)}
@@ -995,32 +1000,26 @@ const CaseList: React.FC = () => {
                         <EditableControls/>
                     </Editable>
                 </Flex>
-                <Flex>
-                    <IconButton
-                        aria-label={t('add_case')}
-                        icon={<PiFilePlus/>}
-                        colorScheme="gray"
+                <Menu>
+                    <MenuButton
+                        as={IconButton}
                         size="sm"
-                        onClick={() => onAddCase(testSuiteId)}
+                        aria-label="Options"
+                        icon={<HamburgerIcon />}
+                        variant="ghost"
                     />
-                    {/* New Button for Adding Folder */}
-                    <IconButton
-                        aria-label={t('add_test_suite')}
-                        icon={<PiFolderSimplePlus/>}
-                        colorScheme="gray"
-                        size="sm"
-                        ml={2}
-                        onClick={() => onAddSuite(testSuiteId)}
-                    />
-                    <IconButton
-                        aria-label={t('delete_test_suite')}
-                        icon={<DeleteIcon/>}
-                        colorScheme="gray"
-                        size="sm"
-                        ml={2}
-                        onClick={() => onDeleteSuite(testSuiteId)}
-                    />
-                </Flex>
+                    <MenuList>
+                        <MenuItem icon={<AddIcon />} onClick={() => onAddCase(testSuiteId)}>
+                            {t('add_case')}
+                        </MenuItem>
+                        <MenuItem icon={<AddIcon />} onClick={() => onAddSuite(testSuiteId)}>
+                            {t('add_test_suite')}
+                        </MenuItem>
+                        <MenuItem icon={<DeleteIcon />} onClick={() => onDeleteSuite(testSuiteId)}>
+                            {t('delete_test_suite')}
+                        </MenuItem>
+                    </MenuList>
+                </Menu>
             </Flex>
         );
     };
@@ -1254,7 +1253,7 @@ const CaseList: React.FC = () => {
                                         }}>
                                             {t('delete')}
                                         </Button>
-                                        <Button ml={2} onClick={onDeleteModalClose}>{t('cancel')}</Button>
+                                        <Button ml={2} onClick={onTestSuiteDeleteModalClose}>{t('cancel')}</Button>
                                     </ModalFooter>
                                 </ModalContent>
                             </Modal>

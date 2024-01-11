@@ -343,7 +343,7 @@ const RunCaseList: React.FC = () => {
         <Table variant="simple">
             <Tbody>
                 {testRunCases.map(testRunCase => (
-                    <Tr cursor="pointer" _hover={{bg: "gray.100"}}>
+                    <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testRunCase)}>
                         <Td borderBottom="1px" borderColor="gray.200">{testRunCase.title}</Td>
                         <Td width="120px">
                             <Flex justifyContent="flex-end" alignItems="center">
@@ -361,12 +361,14 @@ const RunCaseList: React.FC = () => {
                                         <IconButton
                                             aria-label={t('open_test_case')}
                                             icon={<ChevronLeftIcon/>}
+                                            variant="ghost"
                                             size="sm"
                                             onClick={() => handleTestCaseClick(null)}
                                         /> :
                                         <IconButton
                                             aria-label={t('close_test_case')}
                                             icon={<ChevronRightIcon/>}
+                                            variant="ghost"
                                             size="sm"
                                             onClick={() => handleTestCaseClick(testRunCase)}
                                         />}
