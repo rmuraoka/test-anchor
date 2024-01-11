@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"os"
 	"time"
@@ -20,11 +20,11 @@ func AuthenticateJWT() gin.HandlerFunc {
 		}
 
 		tokenString := header[len(BearerSchema):]
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("予期しないサインイン方法: %v", token.Header["alg"])
 			}
-			return jwtKey, nil
+			return []byte(os.Getenv("JWT_SECRET_KEY")), nil
 		})
 
 		if err != nil {
@@ -32,8 +32,8 @@ func AuthenticateJWT() gin.HandlerFunc {
 			return
 		}
 
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			c.Set("email", claims["email"])
+		if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok && token.Valid {
+			c.Set("email", claims.Subject)
 			c.Next()
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "無効なトークンです"})
@@ -42,23 +42,14 @@ func AuthenticateJWT() gin.HandlerFunc {
 }
 
 func GenerateJWT(email string) (string, error) {
-	expirationTime := time.Now().Add(1 * time.Hour)
-	claims := &Claims{
-		Email: email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		},
+	expirationTime := time.Now().Add(24 * time.Hour)
+	claims := &jwt.RegisteredClaims{
+		Subject:   email,
+		ExpiresAt: jwt.NewNumericDate(expirationTime),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
 
 	return tokenString, err
-}
-
-var jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
-
-type Claims struct {
-	Email string `json:"email"`
-	jwt.StandardClaims
 }
