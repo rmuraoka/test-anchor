@@ -3,7 +3,7 @@ import {
     Box,
     Button,
     ButtonGroup,
-    ChakraProvider,
+    ChakraProvider, Divider,
     Editable,
     EditableInput,
     EditablePreview,
@@ -11,6 +11,7 @@ import {
     FormControl,
     FormLabel,
     Heading,
+    Highlight,
     HStack,
     Icon,
     IconButton,
@@ -201,11 +202,15 @@ const CaseList: React.FC = () => {
     const [hoverNodeKey, setHoverNodeKey] = useState<number | null>(null);
     const [hoverNodeIndex, setHoverNodeIndex] = useState<number | null>(null);
     const [hoverNodePosition, setHoverNodePosition] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const DraggableTestCase: React.FC<DraggableTestCaseProps> =/**
-*
-*/
- ({testCase, index, testSuiteId}) => {
+    const filterTestCases = (testCases: TestCase[]) => {
+        return testCases
+            .filter(tc => tc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                tc.content.toLowerCase().includes(searchTerm.toLowerCase()))
+    };
+
+    const DraggableTestCase: React.FC<DraggableTestCaseProps> = ({testCase, index, testSuiteId}) => {
         const ref = useRef<HTMLDivElement>(null);
 
         const [{isDragging}, drag, preview] = useDrag(() => ({
@@ -631,7 +636,6 @@ const CaseList: React.FC = () => {
         }
     };
 
-// APIからテストケースを取得
     const fetchTestCases = async () => {
         try {
             const response = await apiRequest(`/protected/${project_code}/cases`);
@@ -927,66 +931,69 @@ const CaseList: React.FC = () => {
         onDeleteModalOpen();
     };
 
-    const renderTestCases = (testCases: TestCase[], testSuiteId: number) => (
-        <Table variant="simple">
-            <Tbody>
-                {testCases.map((testCase, index) => (
-                    <React.Fragment key={testCase.id}>
-                        {hoverIndex === index && hoverPosition === 'upper' && hoverSuiteId === testSuiteId && (
-                            <Tr>
-                                <Td colSpan={100} backgroundColor="gray.100"/>
-                            </Tr>
-                        )}
-                        <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}
-                            onClick={() => handleTestCaseClick(testCase)}>
-                            <Td
-                                borderBottom="1px"
-                                borderColor="gray.200"
-                                maxWidth="500px"
-                                whiteSpace="normal"
-                                paddingY="0"
-                            >
-                                <DraggableTestCase testCase={testCase} index={index} testSuiteId={testSuiteId}/>
-                            </Td>
-                            <Td textAlign="right" width="120px" paddingY="0">
-                                <IconButton
-                                    aria-label={t('delete_test_case')}
-                                    icon={<DeleteIcon/>}
-                                    variant="ghost"
-                                    size="sm"
-                                    mr={2}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDelete(testCase.id);
-                                    }}
-                                />
-                                {selectedTestCase && selectedTestCase.id === testCase.id ?
+    const renderTestCases = (testCases: TestCase[], testSuiteId: number) => {
+        const filteredTestCases = filterTestCases(testCases);
+        return (
+            <Table variant="simple">
+                <Tbody>
+                    {filteredTestCases.map((testCase, index) => (
+                        <React.Fragment key={testCase.id}>
+                            {hoverIndex === index && hoverPosition === 'upper' && hoverSuiteId === testSuiteId && (
+                                <Tr>
+                                    <Td colSpan={100} backgroundColor="gray.100"/>
+                                </Tr>
+                            )}
+                            <Tr id={testCase.id.toString()} cursor="pointer" _hover={{bg: "gray.100"}}
+                                onClick={() => handleTestCaseClick(testCase)}>
+                                <Td
+                                    borderBottom="1px"
+                                    borderColor="gray.200"
+                                    maxWidth="500px"
+                                    whiteSpace="normal"
+                                    paddingY="0"
+                                >
+                                    <DraggableTestCase testCase={testCase} index={index} testSuiteId={testSuiteId}/>
+                                </Td>
+                                <Td textAlign="right" width="120px" paddingY="0">
                                     <IconButton
-                                        aria-label={t('open_test_case')}
+                                        aria-label={t('delete_test_case')}
+                                        icon={<DeleteIcon/>}
                                         variant="ghost"
-                                        icon={<ChevronLeftIcon/>}
                                         size="sm"
-                                        onClick={() => handleTestCaseClick(null)}
-                                    /> :
-                                    <IconButton
-                                        aria-label={t('close_test_case')}
-                                        variant="ghost"
-                                        icon={<ChevronRightIcon/>}
-                                        size="sm"
-                                        onClick={() => handleTestCaseClick(testCase)}
-                                    />}
-                            </Td>
-                        </Tr>
-                        {hoverIndex === index && hoverPosition === 'lower' && hoverSuiteId === testSuiteId && (
-                            <Tr>
-                                <Td colSpan={100} backgroundColor="gray.100"/>
+                                        mr={2}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDelete(testCase.id);
+                                        }}
+                                    />
+                                    {selectedTestCase && selectedTestCase.id === testCase.id ?
+                                        <IconButton
+                                            aria-label={t('open_test_case')}
+                                            variant="ghost"
+                                            icon={<ChevronLeftIcon/>}
+                                            size="sm"
+                                            onClick={() => handleTestCaseClick(null)}
+                                        /> :
+                                        <IconButton
+                                            aria-label={t('close_test_case')}
+                                            variant="ghost"
+                                            icon={<ChevronRightIcon/>}
+                                            size="sm"
+                                            onClick={() => handleTestCaseClick(testCase)}
+                                        />}
+                                </Td>
                             </Tr>
-                        )}
-                    </React.Fragment>
-                ))}
-            </Tbody>
-        </Table>
-    );
+                            {hoverIndex === index && hoverPosition === 'lower' && hoverSuiteId === testSuiteId && (
+                                <Tr>
+                                    <Td colSpan={100} backgroundColor="gray.100"/>
+                                </Tr>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </Tbody>
+            </Table>
+        )
+    };
 
     const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({
                                                                  title,
@@ -1145,20 +1152,34 @@ const CaseList: React.FC = () => {
         ))
     );
 
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value.toLowerCase());
+    };
+
     return (
         <DndProvider backend={HTML5Backend}>
             <ChakraProvider>
                 <Header project_code={project_code} is_show_menu={true}/>
                 <Flex h="100vh">
                     <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
-                        <DroppableTree treeData={onlyTestSuites}
-                                       onDropTestCase={handleTestCaseDropOnTree}
-                                       onDropTestSuite={handleTestSuiteDropOnTree}
-                                       onMoveNode={handleNodeDropOnTree}
+                        <Input
+                            placeholder={t('search_test_case')}
+                            value={searchTerm}
+                            onChange={handleSearchChange}
+                            mb={4}
                         />
+                        <Divider borderColor="gray.200" mb={4} />
+                        <Box overflowY="auto" flex="1">
+                            <DroppableTree
+                                treeData={onlyTestSuites}
+                                onDropTestCase={handleTestCaseDropOnTree}
+                                onDropTestSuite={handleTestSuiteDropOnTree}
+                                onMoveNode={handleNodeDropOnTree}
+                            />
+                        </Box>
                     </Box>
-                    <Box w="50%" p={5} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
-                        <Box p={5}>
+                    <Box w="50%" p={1} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
+                        <Box p={1}>
                             <IconButton
                                 aria-label={t('add_test_suite')}
                                 icon={<PiFolderSimplePlus/>}

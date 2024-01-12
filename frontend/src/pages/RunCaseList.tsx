@@ -8,7 +8,8 @@ import {
     FormControl,
     FormLabel,
     Heading,
-    Icon, IconButton,
+    Icon,
+    IconButton,
     Input,
     Link,
     ListItem,
@@ -27,7 +28,7 @@ import {
     useToast,
     VStack
 } from '@chakra-ui/react';
-import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, TimeIcon} from '@chakra-ui/icons';
+import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, TimeIcon} from '@chakra-ui/icons';
 import {SlFolder} from "react-icons/sl";
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
@@ -105,6 +106,7 @@ const RunCaseList: React.FC = () => {
     const {t} = useTranslation();
     const apiRequest = useApiRequest();
     const [statuses, setStatuses] = useState<Status[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // APIからテストケースを取得
     const fetchTestCases = async () => {
@@ -339,48 +341,62 @@ const RunCaseList: React.FC = () => {
         }
     };
 
-    const renderTestCases = (testRunCases: TestRunCase[]) => (
-        <Table variant="simple">
-            <Tbody>
-                {testRunCases.map(testRunCase => (
-                    <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testRunCase)}>
-                        <Td fontSize="sm" paddingY="2" borderBottom="1px" borderColor="gray.200">{testRunCase.title}</Td>
-                        <Td width="120px" paddingY="0">
-                            <Flex justifyContent="flex-end" alignItems="center">
-                                <Menu>
-                                    <MenuButton as={Button} rightIcon={<ChevronDownIcon/>}
-                                                size="xs"
-                                                bg={`${testRunCase.status.color}.200`} width="100%">
-                                        {testRunCase.status.name}
-                                    </MenuButton>
-                                    <MenuList>
-                                        {renderStatusOptions()}
-                                    </MenuList>
-                                </Menu>
-                                <Box mx={2}>
-                                    {selectedTestCase && selectedTestCase.id === testRunCase.id ?
-                                        <IconButton
-                                            aria-label={t('open_test_case')}
-                                            icon={<ChevronLeftIcon/>}
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleTestCaseClick(null)}
-                                        /> :
-                                        <IconButton
-                                            aria-label={t('close_test_case')}
-                                            icon={<ChevronRightIcon/>}
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleTestCaseClick(testRunCase)}
-                                        />}
-                                </Box>
-                            </Flex>
-                        </Td>
-                    </Tr>
-                ))}
-            </Tbody>
-        </Table>
-    );
+    const filterTestCases = (testRunCases: TestRunCase[]) => {
+        return testRunCases
+            .filter(tc => tc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                tc.content.toLowerCase().includes(searchTerm.toLowerCase()))
+    };
+
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value.toLowerCase());
+    };
+
+    const renderTestCases = (testRunCases: TestRunCase[]) => {
+        const filteredTestCases = filterTestCases(testRunCases);
+        return (
+            <Table variant="simple">
+                <Tbody>
+                    {filteredTestCases.map(testRunCase => (
+                        <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testRunCase)}>
+                            <Td fontSize="sm" paddingY="2" borderBottom="1px"
+                                borderColor="gray.200">{testRunCase.title}</Td>
+                            <Td width="120px" paddingY="0">
+                                <Flex justifyContent="flex-end" alignItems="center">
+                                    <Menu>
+                                        <MenuButton as={Button} rightIcon={<ChevronDownIcon/>}
+                                                    size="xs"
+                                                    bg={`${testRunCase.status.color}.200`} width="100%">
+                                            {testRunCase.status.name}
+                                        </MenuButton>
+                                        <MenuList>
+                                            {renderStatusOptions()}
+                                        </MenuList>
+                                    </Menu>
+                                    <Box mx={2}>
+                                        {selectedTestCase && selectedTestCase.id === testRunCase.id ?
+                                            <IconButton
+                                                aria-label={t('open_test_case')}
+                                                icon={<ChevronLeftIcon/>}
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleTestCaseClick(null)}
+                                            /> :
+                                            <IconButton
+                                                aria-label={t('close_test_case')}
+                                                icon={<ChevronRightIcon/>}
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleTestCaseClick(testRunCase)}
+                                            />}
+                                    </Box>
+                                </Flex>
+                            </Td>
+                        </Tr>
+                    ))}
+                </Tbody>
+            </Table>
+        )
+    };
 
     const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title}) => {
         return (
@@ -451,15 +467,23 @@ const RunCaseList: React.FC = () => {
         <ChakraProvider>
             <Header project_code={project_code} is_show_menu={true}/>
             <Flex h="100vh">
-                <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem" overflowY="auto">
-                    <Tree
-                        showLine
-                        defaultExpandAll
-                        treeData={onlyTestSuites}
+                <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
+                    <Input
+                        placeholder={t('search_test_case')}
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        mb={4}
                     />
+                    <Box overflowY="auto" flex="1">
+                        <Tree
+                            showLine
+                            defaultExpandAll
+                            treeData={onlyTestSuites}
+                        />
+                    </Box>
                 </Box>
-                <Box w="50%" p={5} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
-                    <Box p={5}>
+                <Box w="50%" p={1} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
+                    <Box p={1}>
                         {renderTestSuites(testSuites)}
                     </Box>
                 </Box>
