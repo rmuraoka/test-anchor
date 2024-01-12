@@ -344,12 +344,12 @@ const RunCaseList: React.FC = () => {
             <Tbody>
                 {testRunCases.map(testRunCase => (
                     <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testRunCase)}>
-                        <Td borderBottom="1px" borderColor="gray.200">{testRunCase.title}</Td>
+                        <Td fontSize="sm" paddingY="2" borderBottom="1px" borderColor="gray.200">{testRunCase.title}</Td>
                         <Td width="120px" paddingY="0">
                             <Flex justifyContent="flex-end" alignItems="center">
                                 <Menu>
                                     <MenuButton as={Button} rightIcon={<ChevronDownIcon/>}
-                                                size="sm"
+                                                size="xs"
                                                 bg={`${testRunCase.status.color}.200`} width="100%">
                                         {testRunCase.status.name}
                                     </MenuButton>

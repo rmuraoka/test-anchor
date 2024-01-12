@@ -202,7 +202,10 @@ const CaseList: React.FC = () => {
     const [hoverNodeIndex, setHoverNodeIndex] = useState<number | null>(null);
     const [hoverNodePosition, setHoverNodePosition] = useState<string | null>(null);
 
-    const DraggableTestCase: React.FC<DraggableTestCaseProps> = ({testCase, index, testSuiteId}) => {
+    const DraggableTestCase: React.FC<DraggableTestCaseProps> =/**
+*
+*/
+ ({testCase, index, testSuiteId}) => {
         const ref = useRef<HTMLDivElement>(null);
 
         const [{isDragging}, drag, preview] = useDrag(() => ({
@@ -241,7 +244,7 @@ const CaseList: React.FC = () => {
         drop(drag(preview(ref)));
 
         return (
-            <Box ref={ref} p={1} my={1} bg={isDragging ? "gray.100" : ""} borderRadius="md"
+            <Box ref={ref} p={0} my={1} bg={isDragging ? "gray.100" : ""} borderRadius="md"
                  opacity={isDragging ? 0.5 : 1}>
                 <HStack>
                     <DragHandleIcon mr={2}/>
@@ -249,8 +252,8 @@ const CaseList: React.FC = () => {
                               display="flex"
                               submitOnBlur={false}
                               onSubmit={(newTitle) => handleUpdateTestCaseTitle(newTitle, testCase.id)}>
-                        <EditablePreview/>
-                        <EditableInput mr={2} onKeyDown={(e) => {
+                        <EditablePreview fontSize="sm"/>
+                        <EditableInput fontSize="sm" mr={2} onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
                             }
