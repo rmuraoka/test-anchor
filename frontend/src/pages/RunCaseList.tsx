@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {
+    Avatar,
     Box,
     Button,
     ButtonGroup,
@@ -17,7 +18,7 @@ import {
     MenuButton,
     MenuItem,
     MenuList,
-    OrderedList,
+    OrderedList, Select,
     Table,
     Tbody,
     Td,
@@ -47,6 +48,7 @@ interface TestRunCase {
     comments: Comment[];
     created_by: User;
     updated_by: User;
+    assigned_to: User | null;
 }
 
 interface TestSuite {
@@ -107,6 +109,7 @@ const RunCaseList: React.FC = () => {
     const apiRequest = useApiRequest();
     const [statuses, setStatuses] = useState<Status[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [members, setMembers] = useState<User[]>([]);
 
     // APIからテストケースを取得
     const fetchTestCases = async () => {
@@ -130,6 +133,16 @@ const RunCaseList: React.FC = () => {
             setStatuses(data.entities);
         } catch (error) {
             console.error('Error fetching Statuses:', error);
+        }
+    };
+
+    const fetchUsers = async () => {
+        try {
+            const response = await apiRequest(`/protected/members`);
+            const data = await response.json();
+            setMembers(data.entities)
+        } catch (error) {
+            console.error('Error fetching Users:', error);
         }
     };
 
@@ -162,6 +175,7 @@ const RunCaseList: React.FC = () => {
     useEffect(() => {
         fetchTestCases();
         fetchStatuses();
+        fetchUsers();
     }, [project_code]);
 
     const handleTestCaseClick = (testCase: TestRunCase | null) => {
@@ -235,6 +249,42 @@ const RunCaseList: React.FC = () => {
                 } else {
                     throw new Error(t('failed_to_add_comment'));
                 }
+            } catch (error) {
+                let errorMessage = t('error_occurred');
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                }
+                toast({
+                    title: t('error_occurred'),
+                    description: errorMessage,
+                    status: 'error',
+                    duration: 5000,
+                    isClosable: true,
+                });
+            }
+        }
+    };
+
+    const handleAssignedToChange = async (assignedToId: number | null) => {
+        if (selectedTestCase) {
+            try {
+                const response = await apiRequest(`/protected/runs/cases/${selectedTestCase.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        assigned_to_id: assignedToId
+                    })
+                });
+
+                const assignedTo = assignedToId ? {id: assignedToId, name: ''} : null;
+                setSelectedTestCase({
+                    ...selectedTestCase,
+                    assigned_to: assignedTo
+                });
+
+                if (!response.ok) {
+                    throw new Error(t('failed_to_update_test_case'));
+                }
+                fetchTestCases();
             } catch (error) {
                 let errorMessage = t('error_occurred');
                 if (error instanceof Error) {
@@ -360,7 +410,10 @@ const RunCaseList: React.FC = () => {
                         <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testRunCase)}>
                             <Td fontSize="sm" paddingY="2" borderBottom="1px"
                                 borderColor="gray.200">{testRunCase.title}</Td>
-                            <Td width="120px" paddingY="0">
+                            <Td width="30px" paddingX="0" paddingY="0" alignItems="center" justifyContent="center">
+                                {testRunCase.assigned_to && (<Avatar size='xs' name={testRunCase.assigned_to.name}/>)}
+                            </Td>
+                            <Td width="120px" paddingY="0" paddingX="0">
                                 <Flex justifyContent="flex-end" alignItems="center">
                                     <Menu>
                                         <MenuButton as={Button} rightIcon={<ChevronDownIcon/>}
@@ -553,6 +606,17 @@ const RunCaseList: React.FC = () => {
                                     }}>
                                         {selectedTestCase?.content}
                                     </ReactMarkdown>
+                                    <Heading as="h4" size="md" mt={6} mb={2}>{t('assigned_to')}</Heading>
+                                    <Select placeholder={t("select_assigned_to")}
+                                            value={selectedTestCase?.assigned_to?.id || ""}
+                                            onChange={(e) => handleAssignedToChange(e.target.value !== "" ? parseInt(e.target.value) : null)}
+                                    >
+                                        {members.map((member) => (
+                                            <option key={member.id} value={member.id}>
+                                                {member.name}
+                                            </option>
+                                        ))}
+                                    </Select>
                                     <Heading as="h4" size="md" mt={6} mb={2}>{t('comments')}</Heading>
                                     {renderComments(selectedTestCase.comments)}
                                     <Flex p={5} borderTop="1px" borderColor="gray.200">

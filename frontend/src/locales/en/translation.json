@@ -12,6 +12,7 @@
   "add_new_test_suite": "Add a new test suite",
   "add_project": "Add a new project",
   "add_test_suite": "Add test suite",
+  "assigned_to": "Assigned To",
   "back_to_test_plan": "Back to test plan",
   "cancel": "Cancel",
   "code": "Code",
@@ -106,5 +107,6 @@
   "open_test_case": "Open Test Case",
   "close_test_case": "Close Test Case",
   "confirm_resend_email": "Would you like to reset your password and resend the invitation email?",
-  "select_language": "Select Language"
+  "select_language": "Select Language",
+  "select_assigned_to": "Select a member"
 }

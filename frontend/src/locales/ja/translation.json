@@ -12,6 +12,7 @@
   "add_new_test_suite": "新しいテストスイートを追加",
   "add_project": "新しいプロジェクトを追加",
   "add_test_suite": "テストスイートを追加",
+  "assigned_to": "担当者",
   "back_to_test_plan": "テストプランに戻る",
   "cancel": "キャンセル",
   "code": "コード",
@@ -106,5 +107,6 @@
   "open_test_case": "テストケースを開く",
   "close_test_case": "テストケースを閉じる",
   "confirm_resend_email": "パスワードを初期化し、招待メールを再送信します。よろしいですか？",
-  "select_language": "言語の選択"
+  "select_language": "言語の選択",
+  "select_assigned_to": "担当者を選択"
 }
