@@ -32,7 +32,7 @@ func (h *AuthHandler) PostLogin(c *gin.Context) {
 	}
 
 	var user model.User
-	if result := h.DB.Where("email = ?", input.Email).First(&user); result.Error != nil {
+	if result := h.DB.Preload("Role").Preload("Role.RolePermissions").Preload("Role.RolePermissions.Permission").Where("email = ?", input.Email).First(&user); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			handleError(c, http.StatusUnauthorized, "User not found", result.Error)
 			return
@@ -53,7 +53,19 @@ func (h *AuthHandler) PostLogin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "トークンの生成に失敗しました"})
 		return
 	}
-	userJson := util.Auth{Token: token, User: util.LoginUser{ID: user.ID, Name: user.Name, Language: user.Language}}
+	var permissions []string
+	for _, permission := range user.Role.RolePermissions {
+		permissions = append(permissions, permission.Permission.Name)
+	}
+	userJson := util.Auth{
+		Token: token,
+		User: util.LoginUser{
+			ID:          user.ID,
+			Name:        user.Name,
+			Language:    user.Language,
+			Permissions: permissions,
+		},
+	}
 
 	c.JSON(http.StatusOK, userJson)
 }

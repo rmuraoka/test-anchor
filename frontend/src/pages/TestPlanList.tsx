@@ -184,7 +184,9 @@ const TestPlanList: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <Button colorScheme="blue" onClick={onOpen}>{t('add_new_test_plan')}</Button>
+                        {user.permissions && user.permissions.includes('edit') && (
+                            <Button colorScheme="blue" onClick={onOpen}>{t('add_new_test_plan')}</Button>
+                        )}
                     </HStack>
                     <Table variant="simple">
                         <Thead>
@@ -194,7 +196,7 @@ const TestPlanList: React.FC = () => {
                                 <Th>{t('started_at')}</Th>
                                 <Th>{t('completed_at')}</Th>
                                 <Th>{t('last_updated_by')}</Th>
-                                <Th>{t('action')}</Th>
+                                {user.permissions && user.permissions.includes('edit') && (<Th>{t('action')}</Th>)}
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -212,8 +214,10 @@ const TestPlanList: React.FC = () => {
                                     <Td>{filteredTestPlan.started_at ? filteredTestPlan.started_at : "-"}</Td>
                                     <Td>{filteredTestPlan.completed_at ? filteredTestPlan.started_at : "-"}</Td>
                                     <Td>{filteredTestPlan.updated_by.name}</Td>
-                                    <Td><Button colorScheme="blue"
-                                                onClick={() => openEditModal(filteredTestPlan)}>{t('edit')}</Button></Td>
+                                    {user.permissions && user.permissions.includes('edit') && (
+                                        <Td><Button colorScheme="blue"
+                                                    onClick={() => openEditModal(filteredTestPlan)}>{t('edit')}</Button></Td>
+                                    )}
                                 </Tr>
                             ))}
                         </Tbody>

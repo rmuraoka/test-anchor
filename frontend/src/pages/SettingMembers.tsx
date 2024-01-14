@@ -1,5 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
+    Alert,
+    AlertIcon,
     Box,
     Button,
     ChakraProvider,
@@ -16,9 +18,11 @@ import {
     ModalFooter,
     ModalHeader,
     ModalOverlay,
+    Select,
     Table,
     Tbody,
-    Td, Text,
+    Td,
+    Text,
     Th,
     Thead,
     Tr,
@@ -26,7 +30,7 @@ import {
 } from '@chakra-ui/react';
 import Header from "../components/Header";
 import SettingMenu from "../components/SettingMenu";
-import {EditIcon, EmailIcon, LockIcon, NotAllowedIcon, UnlockIcon} from "@chakra-ui/icons";
+import {EditIcon, EmailIcon, NotAllowedIcon, UnlockIcon} from "@chakra-ui/icons";
 import {useTranslation} from "react-i18next";
 import {useApiRequest} from "../components/UseApiRequest";
 
@@ -35,23 +39,40 @@ interface Member {
     email: string;
     name: string;
     status: string;
+    language: string;
+    role: Role;
 }
+
+interface Role {
+    id: number;
+    name: string;
+    description: string;
+}
+
 
 const SettingMembers: React.FC = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const [searchTerm, setSearchTerm] = useState('');
     const [members, setMembers] = useState<Member[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isConfirmResendModalOpen, setIsConfirmResendModalOpen] = useState(false);
     const [isConfirmLockModalOpen, setIsConfirmLockModalOpen] = useState(false);
     const [isConfirmUnLockModalOpen, setIsConfirmUnLockModalOpen] = useState(false);
-    const [targetMemberId, setTargetMemberId] = useState<number|null>(null);
-    const [editableMember, setEditableMember] = useState({id: 0, name: '', email: ''});
+    const [targetMemberId, setTargetMemberId] = useState<number | null>(null);
+    const [editableMember, setEditableMember] = useState({
+        id: 0,
+        name: '',
+        email: '',
+        status: 'Active',
+        language: 'en',
+        role_id: 0
+    });
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-    const [newMember, setNewMember] = useState({name: '', email: ''});
+    const [newMember, setNewMember] = useState({name: '', email: '', status: 'Active', language: 'en', role_id: 0});
     const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
     const toast = useToast();
-    const { t } = useTranslation();
+    const {t} = useTranslation();
     const apiRequest = useApiRequest();
 
     const fetchMembers = async () => {
@@ -64,8 +85,22 @@ const SettingMembers: React.FC = () => {
         }
     };
 
+    const fetchRoles = async () => {
+        try {
+            const response = await apiRequest(`/protected/roles`);
+            const data = await response.json();
+            setRoles(data.entities)
+        } catch (error) {
+            console.error('Error fetching TestCases:', error);
+        }
+    };
+
     const handleInvite = async () => {
         try {
+            if (newMember.role_id == 0) {
+                newMember.role_id = roles[0].id
+            }
+
             const response = await apiRequest(`/protected/members`, {
                 method: 'POST',
                 body: JSON.stringify(newMember)
@@ -77,7 +112,7 @@ const SettingMembers: React.FC = () => {
 
             setIsInviteModalOpen(false);
             setIsSubmitDisabled(false);
-            setNewMember({name: '', email: ''});
+            setNewMember({name: '', email: '', status: 'Active', language: 'en', role_id: 0});
             toast({
                 title: t('member_invited_successfully'),
                 status: 'success',
@@ -152,10 +187,18 @@ const SettingMembers: React.FC = () => {
 
     useEffect(() => {
         fetchMembers();
+        fetchRoles();
     }, []);
 
     const handleEditMember = (member: Member) => {
-        setEditableMember({id: member.id, name: member.name, email: member.email});
+        setEditableMember({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            status: member.status,
+            language: member.language,
+            role_id: member.role.id
+        });
         setIsEditModalOpen(true);
     };
 
@@ -263,6 +306,29 @@ const SettingMembers: React.FC = () => {
                                 value={editableMember.email}
                                 onChange={(e) => setEditableMember({...editableMember, email: e.target.value})}
                             />
+                            <FormLabel>{t('role')}</FormLabel>
+                            <Select
+                                isDisabled={editableMember?.id == user.id}
+                                value={editableMember?.role_id}
+                                onChange={(e) => setEditableMember({
+                                    ...editableMember,
+                                    role_id: parseInt(e.target.value)
+                                })}
+                            >
+                                {roles.map((role) => (
+                                    <option key={role.id} value={role.id}>
+                                        {role.name}:{role.description}
+                                    </option>
+                                ))}
+                            </Select>
+                            {editableMember?.id === user.id && (
+                                <Alert mt={2} status="warning" borderRadius="md" boxShadow="lg">
+                                    <AlertIcon/>
+                                    <Text fontSize="xs" fontWeight="bold">
+                                        {t('alert_permission_change')}
+                                    </Text>
+                                </Alert>
+                            )}
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
@@ -290,10 +356,25 @@ const SettingMembers: React.FC = () => {
                                        setNewMember({...newMember, email: e.target.value});
                                        validateForm();
                                    }}/>
+                            <FormLabel>{t('role')}</FormLabel>
+                            <Select
+                                value={newMember.role_id}
+                                onChange={(e) => setNewMember({
+                                    ...newMember,
+                                    role_id: parseInt(e.target.value)
+                                })}
+                            >
+                                {roles.map((role) => (
+                                    <option key={role.id} value={role.id}>
+                                        {role.name}:{role.description}
+                                    </option>
+                                ))}
+                            </Select>
                             <ModalFooter>
                                 <Button type="submit" colorScheme="blue" mr={3}
                                         isDisabled={isSubmitDisabled}>{t('invite')}</Button>
-                                <Button variant="ghost" onClick={() => setIsInviteModalOpen(false)}>{t('cancel')}</Button>
+                                <Button variant="ghost"
+                                        onClick={() => setIsInviteModalOpen(false)}>{t('cancel')}</Button>
                             </ModalFooter>
                         </FormControl>
                     </ModalBody>
@@ -308,7 +389,9 @@ const SettingMembers: React.FC = () => {
                         <Text>{t('confirm_deactivate')}</Text>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="red" onClick={() => {handleUpdateDeactivate()}}>
+                        <Button colorScheme="red" onClick={() => {
+                            handleUpdateDeactivate()
+                        }}>
                             {t('deactivate')}
                         </Button>
                         <Button ml={2} onClick={() => setIsConfirmLockModalOpen(false)}>{t('cancel')}</Button>
@@ -324,7 +407,9 @@ const SettingMembers: React.FC = () => {
                         <Text>{t('confirm_activate')}</Text>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" onClick={() => {handleUpdateActivate()}}>
+                        <Button colorScheme="blue" onClick={() => {
+                            handleUpdateActivate()
+                        }}>
                             {t('activate')}
                         </Button>
                         <Button ml={2} onClick={() => setIsConfirmUnLockModalOpen(false)}>{t('cancel')}</Button>
@@ -340,7 +425,9 @@ const SettingMembers: React.FC = () => {
                         <Text>{t('confirm_resend_email')}</Text>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" onClick={() => {handleResendPassword()}}>
+                        <Button colorScheme="blue" onClick={() => {
+                            handleResendPassword()
+                        }}>
                             {t('send')}
                         </Button>
                         <Button ml={2} onClick={() => setIsConfirmResendModalOpen(false)}>{t('cancel')}</Button>

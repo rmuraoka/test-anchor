@@ -1,7 +1,7 @@
 // PrivateRoute.tsx
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { isAuthenticated } from './IsAuthenticated';
+import {isAuthenticated, isAuthenticatedForAdmin} from './IsAuthenticated';
 
 interface PrivateRouteProps {
     children: React.ReactNode;

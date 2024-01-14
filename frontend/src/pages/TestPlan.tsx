@@ -348,7 +348,7 @@ const TestPlan: React.FC = () => {
             });
         }
     };
-    const handleSaveTitle  = async () => {
+    const handleSaveTitle = async () => {
         try {
             if (!selectedTestRun) {
                 return;
@@ -580,7 +580,6 @@ const TestPlan: React.FC = () => {
                             <Spinner size="xl"/>
                         </Flex>
                     ) : (
-                        // ローディング完了後のコンテンツ
                         <>
                             <Flex justifyContent="space-around" alignItems="center" mb={4}>
                                 <Chart/>
@@ -594,7 +593,7 @@ const TestPlan: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <Button colorScheme="blue" onClick={onOpen}>{t('add_new_test_run')}</Button>
+                        {user.permissions && user.permissions.includes('edit') && (<Button colorScheme="blue" onClick={onOpen}>{t('add_new_test_run')}</Button>)}
                     </HStack>
                     <Table variant="simple">
                         <Thead>
@@ -604,6 +603,7 @@ const TestPlan: React.FC = () => {
                                 <Th>{t('started_at')}</Th>
                                 <Th>{t('completed_at')}</Th>
                                 <Th>{t('last_updated_by')}</Th>
+                                {user.permissions && user.permissions.includes('edit') && (<Th>{t('actions')}</Th>)}
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -617,10 +617,12 @@ const TestPlan: React.FC = () => {
                                     <Td>{filteredTestRun.started_at ? filteredTestRun.started_at : "-"}</Td>
                                     <Td>{filteredTestRun.completed_at ? filteredTestRun.started_at : "-"}</Td>
                                     <Td>{filteredTestRun.updated_by.name}</Td>
-                                    <Td>
-                                        <Button colorScheme="blue"
-                                                onClick={() => handleEditTestRun(filteredTestRun)}>{t('edit')}</Button>
-                                    </Td>
+                                    {user.permissions && user.permissions.includes('edit') && (
+                                        <Td>
+                                            <Button colorScheme="blue"
+                                                    onClick={() => handleEditTestRun(filteredTestRun)}>{t('edit')}</Button>
+                                        </Td>
+                                    )}
                                 </Tr>
                             ))}
                         </Tbody>

@@ -19,7 +19,7 @@ import {
     Select,
     Table,
     Tbody,
-    Td,
+    Td, Text,
     Th,
     Thead,
     Tr,
@@ -61,6 +61,7 @@ const Milestone: React.FC = () => {
     };
     const { t } = useTranslation();
     const apiRequest = useApiRequest();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     // APIからテストケースを取得
     const fetchMilestones = async () => {
@@ -170,7 +171,9 @@ const Milestone: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <Button colorScheme="blue" onClick={onOpen}>{t('add_new_milestone')}</Button>
+                        {user.permissions && user.permissions.includes('edit') && (
+                            <Button colorScheme="blue" onClick={onOpen}>{t('add_new_milestone')}</Button>
+                        )}
                     </HStack>
                     <Table variant="simple">
                         <Thead>
@@ -187,9 +190,13 @@ const Milestone: React.FC = () => {
                             ).map((filteredMilestone) => (
                                 <Tr key={filteredMilestone.id}>
                                     <Td>
-                                        <Link color="blue.500" onClick={() => openEditModal(filteredMilestone)}>
-                                            {filteredMilestone.title}
-                                        </Link>
+                                        {user.permissions && user.permissions.includes('edit') ?
+                                            <Link color="blue.500" onClick={() => openEditModal(filteredMilestone)}>
+                                                {filteredMilestone.title}
+                                            </Link>
+                                            :
+                                            <Text>{filteredMilestone.title}</Text>
+                                        }
                                     </Td>
                                     <Td>{filteredMilestone.description}</Td>
                                     <Td>{filteredMilestone.status}</Td>

@@ -22,19 +22,27 @@ func NewMemberHandler(db *gorm.DB, emailSender util.EmailSender) *MemberHandler 
 
 func (h *MemberHandler) GetMembers(c *gin.Context) {
 	var users []model.User
-	result := h.DB.Find(&users)
+	result := h.DB.Preload("Role").Preload("Role.RolePermissions").Preload("Role.RolePermissions.Permission").Find(&users)
 	if result.Error != nil {
 		log.Fatal("Failed to retrieve records: ", result.Error)
 	}
 
-	// Prepare the response data
 	memberResponses := []util.Member{}
 	for _, user := range users {
+		permissions := []util.Permission{}
+		for _, permission := range user.Role.RolePermissions {
+			permissions = append(permissions, util.Permission{
+				ID:   permission.Permission.ID,
+				Name: permission.Permission.Name,
+			})
+		}
 		memberResponses = append(memberResponses, util.Member{
-			ID:     user.ID,
-			Email:  user.Email,
-			Name:   user.Name,
-			Status: user.Status,
+			ID:          user.ID,
+			Email:       user.Email,
+			Name:        user.Name,
+			Status:      user.Status,
+			Role:        util.Role{ID: user.Role.ID, Name: user.Role.Name, Description: user.Role.Description},
+			Permissions: permissions,
 		})
 	}
 
@@ -52,17 +60,26 @@ func (h *MemberHandler) GetMember(c *gin.Context) {
 	}
 
 	var user model.User
-	result := h.DB.First(&user, id)
+	result := h.DB.Preload("Role").Preload("Role.RolePermissions").Preload("Role.RolePermissions.Permission").First(&user, id)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Member is not found"})
 		return
 	}
 
+	permissions := []util.Permission{}
+	for _, permission := range user.Role.RolePermissions {
+		permissions = append(permissions, util.Permission{
+			ID:   permission.Permission.ID,
+			Name: permission.Permission.Name,
+		})
+	}
 	memberResponses := util.Member{
-		ID:     user.ID,
-		Email:  user.Email,
-		Name:   user.Name,
-		Status: user.Status,
+		ID:          user.ID,
+		Email:       user.Email,
+		Name:        user.Name,
+		Status:      user.Status,
+		Role:        util.Role{ID: user.Role.ID, Name: user.Role.Name, Description: user.Role.Description},
+		Permissions: permissions,
 	}
 
 	c.JSON(http.StatusOK, memberResponses)

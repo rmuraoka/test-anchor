@@ -95,6 +95,12 @@ type Status struct {
 	Color string `json:"color"`
 }
 
+type Role struct {
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type Comment struct {
 	ID        uint    `json:"id"`
 	Status    *Status `json:"status"`
@@ -109,9 +115,10 @@ type User struct {
 }
 
 type LoginUser struct {
-	ID       uint   `json:"id"`
-	Name     string `json:"name"`
-	Language string `json:"language"`
+	ID          uint     `json:"id"`
+	Name        string   `json:"name"`
+	Language    string   `json:"language"`
+	Permissions []string `json:"permissions"`
 }
 
 type TestRun struct {
@@ -176,11 +183,18 @@ type ProjectResponseData struct {
 	TestPlans   []TestPlan  `json:"test_plans"`
 }
 
+type Permission struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
 type Member struct {
-	ID     uint   `json:"id"`
-	Email  string `json:"email"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	ID          uint         `json:"id"`
+	Email       string       `json:"email"`
+	Name        string       `json:"name"`
+	Status      string       `json:"status"`
+	Role        Role         `json:"role"`
+	Permissions []Permission `json:"permissions"`
 }
 
 type MembersResponseData struct {
@@ -190,4 +204,8 @@ type MembersResponseData struct {
 type StatusesResponseData struct {
 	DefaultID uint     `json:"default_id"`
 	Statuses  []Status `json:"entities"`
+}
+
+type RolesResponseData struct {
+	Roles []Role `json:"entities"`
 }

@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "Viewer",
+    "description": "View Only"
+  },
+  {
+    "id": 2,
+    "name": "Editor",
+    "description": "Editable and Addable"
+  },
+  {
+    "id": 3,
+    "name": "Lead Editor",
+    "description": "Editable, Addable, and Deletable"
+  },
+  {
+    "id": 4,
+    "name": "Administrator",
+    "description": "Full Access"
+  }
+]

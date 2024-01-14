@@ -12,6 +12,7 @@ import (
 func NewRouter(
 	db *gorm.DB,
 	statusHandler *handler.StatusHandler,
+	roleHandler *handler.RoleHandler,
 	authHandler *handler.AuthHandler,
 	memberHandler *handler.MemberHandler,
 	testCaseHandler *handler.TestCaseHandler,
@@ -42,6 +43,7 @@ func NewRouter(
 	protected.Use(middleware.AuthenticateJWT(), middleware.CheckUserStatus(db))
 	{
 		protected.GET("/statuses", statusHandler.GetStatues)
+		protected.GET("/roles", roleHandler.GetRoles)
 
 		protected.GET("/members", memberHandler.GetMembers)
 		protected.GET("/members/:id", memberHandler.GetMember)
