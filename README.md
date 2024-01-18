@@ -31,8 +31,8 @@ This project utilizes the following environment variables. Please set these vari
 - `DB_PASSWORD`: Password for the database user. Example: `password`
 - `DB_NAME`: Name of the database to use. Example: `testanchorDB`
 - `MYSQL_ROOT_PASSWORD`: Password for the MySQL database's root user. Example: `anotherpassword`
-- `BACKEND_URL`: URL of the backend server. Example: `http://localhost:8000`
-- `FRONTEND_ORIGIN`: Origin URL of the frontend server. Example: `http://localhost:3000/api`
+- `BACKEND_URL`: URL of the backend server. Example: `http://localhost:8000/api`
+- `FRONTEND_ORIGIN`: Origin URL of the frontend server. Example: `http://localhost:3000`
 - `JWT_SECRET_KEY`: Secret key used for JSON Web Token (JWT). Generate and use a random string.
 - `INITIAL_USER_EMAIL`: Email address of the initial user. Example: `user@example.com`
 - `INITIAL_USER_NAME`: Name of the initial user. Example: `Username`
