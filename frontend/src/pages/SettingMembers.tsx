@@ -77,7 +77,7 @@ const SettingMembers: React.FC = () => {
 
     const fetchMembers = async () => {
         try {
-            const response = await apiRequest(`/protected/members`);
+            const response = await apiRequest(`/protected/admin/members`);
             const data = await response.json();
             setMembers(data.entities)
         } catch (error) {

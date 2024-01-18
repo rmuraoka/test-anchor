@@ -71,6 +71,7 @@ func main() {
 	}
 
 	// ハンドラーの初期化
+	healthHandler := handler.NewHealthHandler()
 	statusHandler := handler.NewStatusHandler(db)
 	rolesHandler := handler.NewRoleHandler(db)
 	authHandler := handler.NewAuthHandler(db)
@@ -84,6 +85,7 @@ func main() {
 	// ルータの初期化
 	r := router.NewRouter(
 		db,
+		healthHandler,
 		statusHandler,
 		rolesHandler,
 		authHandler,

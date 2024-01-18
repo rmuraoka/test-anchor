@@ -188,13 +188,22 @@ type Permission struct {
 	Name string `json:"name"`
 }
 
-type Member struct {
+type AdminMember struct {
 	ID          uint         `json:"id"`
 	Email       string       `json:"email"`
 	Name        string       `json:"name"`
 	Status      string       `json:"status"`
 	Role        Role         `json:"role"`
 	Permissions []Permission `json:"permissions"`
+}
+
+type Member struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+type AdminMembersResponseData struct {
+	Members []AdminMember `json:"entities"`
 }
 
 type MembersResponseData struct {
