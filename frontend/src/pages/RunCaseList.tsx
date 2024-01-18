@@ -576,7 +576,7 @@ const RunCaseList: React.FC = () => {
                                     <VStack align="start">
                                         <Flex justify="space-between">
                                             <Heading as="h3" size="md">{selectedTestCase.title}</Heading>
-                                            {testRunStatus !== 'Completed' && (
+                                            {testRunStatus !== 'Completed' && user.permissions && user.permissions.includes('edit') && (
                                                 <Button
                                                     size="sm"
                                                     onClick={() => setEditMode(true)}

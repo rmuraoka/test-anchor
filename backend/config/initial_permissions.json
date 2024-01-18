@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "name": "view",
+    "description": "View"
+  },
+  {
+    "id": 2,
+    "name": "edit",
+    "description": "Edit"
+  },
+  {
+    "id": 3,
+    "name": "delete",
+    "description": "Delete"
+  },
+  {
+    "id": 4,
+    "name": "admin",
+    "description": "administrator"
+  }
+]

@@ -3,7 +3,8 @@ import {
     Box,
     Button,
     ButtonGroup,
-    ChakraProvider, Divider,
+    ChakraProvider,
+    Divider,
     Editable,
     EditableInput,
     EditablePreview,
@@ -11,7 +12,6 @@ import {
     FormControl,
     FormLabel,
     Heading,
-    Highlight,
     HStack,
     Icon,
     IconButton,
@@ -97,6 +97,11 @@ interface TestSuiteHeaderProps {
     onAddCase: (testSuiteId: number) => void;
     onAddSuite: (testSuiteId: number | null) => void;
     onDeleteSuite: (testSuiteId: number) => void;
+}
+
+interface TestSuiteHeaderTitleProps {
+    title: string;
+    testSuiteId: number;
 }
 
 interface NewTestSuite {
@@ -952,10 +957,14 @@ const CaseList: React.FC = () => {
                                     whiteSpace="normal"
                                     paddingY="0"
                                 >
-                                    <DraggableTestCase testCase={testCase} index={index} testSuiteId={testSuiteId}/>
+                                    {user.permissions && user.permissions.includes('edit') ?
+                                        <DraggableTestCase testCase={testCase} index={index}
+                                                           testSuiteId={testSuiteId}/> :
+                                        <Text>{testCase.title}</Text>
+                                    }
                                 </Td>
                                 <Td textAlign="right" width="120px" paddingY="0">
-                                    <IconButton
+                                    {user.permissions && user.permissions.includes('delete') && (<IconButton
                                         aria-label={t('delete_test_case')}
                                         icon={<DeleteIcon/>}
                                         variant="ghost"
@@ -965,7 +974,7 @@ const CaseList: React.FC = () => {
                                             e.stopPropagation();
                                             onDelete(testCase.id);
                                         }}
-                                    />
+                                    />)}
                                     {selectedTestCase && selectedTestCase.id === testCase.id ?
                                         <IconButton
                                             aria-label={t('open_test_case')}
@@ -995,6 +1004,27 @@ const CaseList: React.FC = () => {
         )
     };
 
+    const TestSuiteHeaderTitle: React.FC<TestSuiteHeaderTitleProps> = ({title, testSuiteId,}) => {
+        if (user.permissions && user.permissions.includes('edit')) {
+            return (
+                <Editable defaultValue={title}
+                          display="flex"
+                          submitOnBlur={false}
+                          onSubmit={(newTitle) => handleUpdateTestSuiteTitle(newTitle, testSuiteId)}>
+                    <EditablePreview fontSize="lg" fontWeight="bold"/>
+                    <EditableInput mr={2} onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                        }
+                    }}/>
+                    <EditableControls/>
+                </Editable>
+            );
+        } else {
+            return (<Text fontSize="lg" fontWeight="bold">{title}</Text>);
+        }
+    };
+
     const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({
                                                                  title,
                                                                  testSuiteId,
@@ -1006,39 +1036,33 @@ const CaseList: React.FC = () => {
             <Flex justifyContent="space-between" alignItems="center" mb={4}>
                 <Flex alignItems="center">
                     <Icon as={SlFolder} mr={2}/>
-                    <Editable defaultValue={title}
-                              display="flex"
-                              submitOnBlur={false}
-                              onSubmit={(newTitle) => handleUpdateTestSuiteTitle(newTitle, testSuiteId)}>
-                        <EditablePreview fontSize="lg" fontWeight="bold"/>
-                        <EditableInput mr={2} onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                            }
-                        }}/>
-                        <EditableControls/>
-                    </Editable>
+                    <TestSuiteHeaderTitle title={title} testSuiteId={testSuiteId}/>
                 </Flex>
-                <Menu>
-                    <MenuButton
-                        as={IconButton}
-                        size="sm"
-                        aria-label="Options"
-                        icon={<HamburgerIcon/>}
-                        variant="ghost"
-                    />
-                    <MenuList>
-                        <MenuItem icon={<AddIcon/>} onClick={() => onAddCase(testSuiteId)}>
-                            {t('add_case')}
-                        </MenuItem>
-                        <MenuItem icon={<AddIcon/>} onClick={() => onAddSuite(testSuiteId)}>
-                            {t('add_test_suite')}
-                        </MenuItem>
-                        <MenuItem icon={<DeleteIcon/>} onClick={() => onDeleteSuite(testSuiteId)}>
-                            {t('delete_test_suite')}
-                        </MenuItem>
-                    </MenuList>
-                </Menu>
+                {user.permissions && user.permissions.includes('edit') && (
+
+                    <Menu>
+                        <MenuButton
+                            as={IconButton}
+                            size="sm"
+                            aria-label="Options"
+                            icon={<HamburgerIcon/>}
+                            variant="ghost"
+                        />
+                        <MenuList>
+                            <MenuItem icon={<AddIcon/>} onClick={() => onAddCase(testSuiteId)}>
+                                {t('add_case')}
+                            </MenuItem>
+                            <MenuItem icon={<AddIcon/>} onClick={() => onAddSuite(testSuiteId)}>
+                                {t('add_test_suite')}
+                            </MenuItem>
+                            {user.permissions && user.permissions.includes('delete') && (
+                                <MenuItem icon={<DeleteIcon/>} onClick={() => onDeleteSuite(testSuiteId)}>
+                                    {t('delete_test_suite')}
+                                </MenuItem>
+                            )}
+                        </MenuList>
+                    </Menu>
+                )}
             </Flex>
         );
     };
@@ -1168,34 +1192,44 @@ const CaseList: React.FC = () => {
                             onChange={handleSearchChange}
                             mb={4}
                         />
-                        <Divider borderColor="gray.200" mb={4} />
+                        <Divider borderColor="gray.200" mb={4}/>
                         <Box overflowY="auto" flex="1">
-                            <DroppableTree
-                                treeData={onlyTestSuites}
-                                onDropTestCase={handleTestCaseDropOnTree}
-                                onDropTestSuite={handleTestSuiteDropOnTree}
-                                onMoveNode={handleNodeDropOnTree}
-                            />
+                            {user.permissions && user.permissions.includes('edit') ?
+                                <DroppableTree
+                                    treeData={onlyTestSuites}
+                                    onDropTestCase={handleTestCaseDropOnTree}
+                                    onDropTestSuite={handleTestSuiteDropOnTree}
+                                    onMoveNode={handleNodeDropOnTree}
+                                />
+                                :
+                                <Tree
+                                    showLine
+                                    defaultExpandAll
+                                    treeData={onlyTestSuites}
+                                />
+                            }
                         </Box>
                     </Box>
                     <Box w="50%" p={1} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
                         <Box p={1}>
-                            <IconButton
-                                aria-label={t('add_test_suite')}
-                                icon={<PiFolderSimplePlus/>}
-                                colorScheme="gray"
-                                size="sm"
-                                ml={2}
-                                onClick={() => {
-                                    setNewTestSuite({
-                                        project_id: projectId,
-                                        parent_id: null,
-                                        name: ''
-                                    });
-                                    onTestSuiteAddModalOpen(); // モーダルを開く
-                                }}
-                                mb={2}
-                            />
+                            {user.permissions && user.permissions.includes('edit') && (
+                                <IconButton
+                                    aria-label={t('add_test_suite')}
+                                    icon={<PiFolderSimplePlus/>}
+                                    colorScheme="gray"
+                                    size="sm"
+                                    ml={2}
+                                    onClick={() => {
+                                        setNewTestSuite({
+                                            project_id: projectId,
+                                            parent_id: null,
+                                            name: ''
+                                        });
+                                        onTestSuiteAddModalOpen(); // モーダルを開く
+                                    }}
+                                    mb={2}
+                                />
+                            )}
                             {renderTestSuites(testSuites)}
                             <Modal isOpen={isTestCaseAddModalOpen} onClose={onTestCaseAddModalClose}>
                                 <ModalOverlay/>
@@ -1351,15 +1385,17 @@ const CaseList: React.FC = () => {
                                         <VStack align="start">
                                             <Flex justify="space-between">
                                                 <Heading as="h3" size="md">{selectedTestCase.title}</Heading>
-                                                <Button size="sm" onClick={() => {
-                                                    if (selectedTestCase && selectedTestCase.milestone) {
-                                                        setSelectedTestCase({
-                                                            ...selectedTestCase,
-                                                            milestone_id: selectedTestCase.milestone.id
-                                                        });
-                                                    }
-                                                    setEditMode(true);
-                                                }} ml={2}>{t('edit')}</Button>
+                                                {user.permissions && user.permissions.includes('edit') && (
+                                                    <Button size="sm" onClick={() => {
+                                                        if (selectedTestCase && selectedTestCase.milestone) {
+                                                            setSelectedTestCase({
+                                                                ...selectedTestCase,
+                                                                milestone_id: selectedTestCase.milestone.id
+                                                            });
+                                                        }
+                                                        setEditMode(true);
+                                                    }} ml={2}>{t('edit')}</Button>
+                                                )}
                                             </Flex>
                                         </VStack>
                                         <ReactMarkdown remarkPlugins={[gfm]} components={{

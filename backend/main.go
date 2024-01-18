@@ -45,6 +45,7 @@ func main() {
 		&model.Permission{},
 		&model.Milestone{},
 		&model.Role{},
+		&model.RolePermission{},
 		&model.User{},
 		&model.Project{},
 		&model.TestSuite{},
@@ -70,7 +71,9 @@ func main() {
 	}
 
 	// ハンドラーの初期化
+	healthHandler := handler.NewHealthHandler()
 	statusHandler := handler.NewStatusHandler(db)
+	rolesHandler := handler.NewRoleHandler(db)
 	authHandler := handler.NewAuthHandler(db)
 	memberHandler := handler.NewMemberHandler(db, emailSender)
 	testCaseHandler := handler.NewTestCaseHandler(db)
@@ -82,7 +85,9 @@ func main() {
 	// ルータの初期化
 	r := router.NewRouter(
 		db,
+		healthHandler,
 		statusHandler,
+		rolesHandler,
 		authHandler,
 		memberHandler,
 		testCaseHandler,
@@ -91,8 +96,9 @@ func main() {
 		testPlanHandler,
 		milestoneHandler,
 	)
+
+	createInitialData(db)
 	createInitialUser(db, emailSender)
-	createInitialStatus(db)
 
 	// サーバを起動
 	r.Run(":8000")
@@ -109,12 +115,18 @@ func createInitialUser(db *gorm.DB, sender util.EmailSender) {
 	var count int64
 	db.Model(&model.User{}).Count(&count)
 	if count == 0 {
+		var role model.Role
+		if err := db.Where("name = ?", "Administrator").First(&role).Error; err != nil {
+			log.Fatalf("初期ユーザーの作成に失敗しました: %v", err)
+		}
+
 		user := model.User{
 			Name:     initialUserName,
 			Email:    initialUserEmail,
 			Password: hashedPassword,
 			Status:   "Active",
 			Language: "en",
+			RoleID:   role.ID,
 		}
 		if err := db.Create(&user).Error; err != nil {
 			log.Fatalf("初期ユーザーの作成に失敗しました: %v", err)
@@ -126,14 +138,29 @@ func createInitialUser(db *gorm.DB, sender util.EmailSender) {
 			log.Fatalf("初期ユーザーの招待に失敗しました: %v", err)
 		}
 	}
+
+	db.Model(&model.User{}).Where("role_id IS NOT NULL").Count(&count)
+	if count == 0 {
+		var youngestUser model.User
+		if err := db.Order("created_at ASC").First(&youngestUser).Error; err != nil {
+			log.Fatalf("最初に登録したユーザーの取得に失敗しました: %v", err)
+		}
+		var role model.Role
+		if err := db.Where("name = ?", "Administrator").First(&role).Error; err != nil {
+			log.Fatalf("ロールの取得に失敗しました: %v", err)
+		}
+		if err := db.Model(&youngestUser).Update("role_id", role.ID).Error; err != nil {
+			log.Fatalf("管理者権限の付与に失敗しました: %v", err)
+		}
+	}
 }
 
-func createInitialStatus(db *gorm.DB) {
-	var count int64
-	db.Model(&model.Status{}).Count(&count)
-	if count == 0 {
+func createInitialData(db *gorm.DB) {
+	var statusCount int64
+	db.Model(&model.Status{}).Count(&statusCount)
+	if statusCount == 0 {
 		var statuses []model.Status
-		absPath, _ := filepath.Abs("config/initial_statuses.json") // 正しいパスに置き換えてください
+		absPath, _ := filepath.Abs("config/initial_statuses.json")
 		byteValue, err := os.ReadFile(absPath)
 		if err != nil {
 			log.Fatalf("Error reading statuses file: %v", err)
@@ -142,6 +169,51 @@ func createInitialStatus(db *gorm.DB) {
 
 		for _, status := range statuses {
 			db.Create(&status)
+		}
+	}
+
+	var roleCount int64
+	db.Model(&model.Role{}).Count(&roleCount)
+	if roleCount == 0 {
+		var roles []model.Role
+		absPath, _ := filepath.Abs("config/initial_roles.json")
+		byteValue, err := os.ReadFile(absPath)
+		if err != nil {
+			log.Fatalf("Error reading statuses file: %v", err)
+		}
+		json.Unmarshal(byteValue, &roles)
+		for _, role := range roles {
+			db.Create(&role)
+		}
+	}
+
+	var permissionCount int64
+	db.Model(&model.Permission{}).Count(&permissionCount)
+	if permissionCount == 0 {
+		var permissions []model.Permission
+		absPath, _ := filepath.Abs("config/initial_permissions.json")
+		byteValue, err := os.ReadFile(absPath)
+		if err != nil {
+			log.Fatalf("Error reading permissions file: %v", err)
+		}
+		json.Unmarshal(byteValue, &permissions)
+		for _, permission := range permissions {
+			db.Create(&permission)
+		}
+	}
+
+	var rolePermissionCount int64
+	db.Model(&model.RolePermission{}).Count(&rolePermissionCount)
+	if rolePermissionCount == 0 {
+		var rolePermissions []model.RolePermission
+		absPath, _ := filepath.Abs("config/initial_role_permissions.json")
+		byteValue, err := os.ReadFile(absPath)
+		if err != nil {
+			log.Fatalf("Error reading rolePermissions file: %v", err)
+		}
+		json.Unmarshal(byteValue, &rolePermissions)
+		for _, rolePermission := range rolePermissions {
+			db.Create(&rolePermission)
 		}
 	}
 }

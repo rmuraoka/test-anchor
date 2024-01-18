@@ -26,7 +26,7 @@ import {
     useToast
 } from '@chakra-ui/react';
 import Header from "../components/Header";
-import { useTranslation } from 'react-i18next';
+import {useTranslation} from 'react-i18next';
 import {useApiRequest} from "../components/UseApiRequest";
 
 interface Project {
@@ -44,6 +44,7 @@ const Home: React.FC = () => {
     const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
     const toast = useToast();
     const apiRequest = useApiRequest();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     const fetchProjects = async () => {
         try {
@@ -54,7 +55,7 @@ const Home: React.FC = () => {
             console.error('Error fetching projects:', error);
         }
     };
-    const { t } = useTranslation();
+    const {t} = useTranslation();
 
     useEffect(() => {
         fetchProjects();
@@ -117,7 +118,9 @@ const Home: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <Button colorScheme="blue" onClick={onOpen}>{t('add_project')}</Button>
+                        {user.permissions && user.permissions.includes('edit') && (
+                            <Button colorScheme="blue" onClick={onOpen}>{t('add_project')}</Button>
+                        )}
                     </HStack>
                     <Table variant="simple">
                         <Thead>
@@ -170,7 +173,8 @@ const Home: React.FC = () => {
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleAddProject} isDisabled={isSubmitDisabled}>{t('add')}</Button>
+                        <Button colorScheme="blue" mr={3} onClick={handleAddProject}
+                                isDisabled={isSubmitDisabled}>{t('add')}</Button>
                         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
                     </ModalFooter>
                 </ModalContent>

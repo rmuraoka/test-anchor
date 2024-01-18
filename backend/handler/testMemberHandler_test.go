@@ -64,7 +64,7 @@ func TestGetMembers(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var response util.MembersResponseData
+	var response util.AdminMembersResponseData
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Len(t, response.Members, 1)
@@ -81,7 +81,7 @@ func TestPostMember(t *testing.T) {
 	// データベースの操作をモック
 	mock.ExpectBegin()
 	mock.ExpectExec("^INSERT INTO `users`").
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "Jane Doe", "jane.doe@example.com", sqlmock.AnyArg(), "active", sqlmock.AnyArg()).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "Jane Doe", "jane.doe@example.com", sqlmock.AnyArg(), "active", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -112,6 +112,12 @@ func TestPutMember(t *testing.T) {
 
 	// データベースの操作をモック
 	userID := 1
+	rows := sqlmock.NewRows([]string{"id", "email", "name", "status"})
+	rows.AddRow(userID, "john.doe@example.com", "John Doe", "active")
+	mock.ExpectQuery("^SELECT \\* FROM `users`").
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnRows(rows)
+
 	mock.ExpectBegin()
 	mock.ExpectExec("^UPDATE `users`").
 		WithArgs(sqlmock.AnyArg(), "Jane Doe Updated", "active", userID).
