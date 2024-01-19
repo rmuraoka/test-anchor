@@ -4,7 +4,7 @@ import {
     Button,
     ChakraProvider,
     Container,
-    FormControl,
+    FormControl, FormHelperText,
     FormLabel,
     HStack,
     Input,
@@ -158,13 +158,30 @@ const Home: React.FC = () => {
                                        setNewProject({...newProject, title: e.target.value});
                                        validateForm();
                                    }}/>
-                            <FormLabel>{t('code')}</FormLabel>
+                            <FormLabel mt={2}>{t('code')}</FormLabel>
+                            <FormHelperText color="gray.500">{t('code_help_text')}</FormHelperText>
                             <Input value={newProject.code}
                                    onChange={(e) => {
-                                       setNewProject({...newProject, code: e.target.value});
-                                       validateForm();
-                                   }}/>
-                            <FormLabel>{t('description')}</FormLabel>
+                                       const inputValue = e.target.value;
+                                       const isValidInput = /^[A-Z0-9]*$/.test(inputValue);
+
+                                       if (isValidInput) {
+                                           setNewProject({...newProject, code: inputValue.toUpperCase()});
+                                           validateForm();
+                                       }
+                                   }}
+                                   onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                       const isAlphabetKey = /^[a-z]$/.test(e.key);
+                                       if (isAlphabetKey) {
+                                           const uppercaseInputValue = e.key.toUpperCase();
+                                           const newValue = (e.target as HTMLInputElement).value + uppercaseInputValue;
+                                           setNewProject({...newProject, code: newValue});
+                                           validateForm();
+                                           return;
+                                       }
+                                   }}
+                            />
+                            <FormLabel mt={2}>{t('description')}</FormLabel>
                             <Input value={newProject.description}
                                    onChange={(e) => {
                                        setNewProject({...newProject, description: e.target.value});

@@ -110,5 +110,6 @@
   "close_test_case": "テストケースを閉じる",
   "confirm_resend_email": "パスワードを初期化し、招待メールを再送信します。よろしいですか？",
   "select_language": "言語の選択",
-  "select_assigned_to": "担当者を選択"
+  "select_assigned_to": "担当者を選択",
+  "code_help_text": "大文字アルファベットで入力してください"
 }

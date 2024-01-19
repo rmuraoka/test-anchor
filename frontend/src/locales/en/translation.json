@@ -110,5 +110,6 @@
   "close_test_case": "Close Test Case",
   "confirm_resend_email": "Would you like to reset your password and resend the invitation email?",
   "select_language": "Select Language",
-  "select_assigned_to": "Select a member"
+  "select_assigned_to": "Select a member",
+  "code_help_text": "Please enter in uppercase letters"
 }
