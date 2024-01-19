@@ -131,7 +131,7 @@ func (h *MemberHandler) PostMember(c *gin.Context) {
 		Status: newUser.Status,
 	}
 
-	subject := "Your Account"
+	subject := "Test Anchor Account"
 	body := "Welcome " + newUser.Name + " Your Password is " + tempPassword
 	to := []string{newUser.Email}
 
@@ -234,7 +234,7 @@ func (h *MemberHandler) PutMember(c *gin.Context) {
 			return
 		}
 
-		subject := "Your Account"
+		subject := "Test Anchor Account"
 		body := "Welcome " + user.Name + " Your Password is " + renewalPassword
 		to := []string{user.Email}
 

@@ -132,7 +132,7 @@ func createInitialUser(db *gorm.DB, sender util.EmailSender) {
 			log.Fatalf("初期ユーザーの作成に失敗しました: %v", err)
 		}
 
-		subject := "Your Account"
+		subject := "Test Anchor Account"
 		body := "Welcome " + user.Name + " Your Password is " + tempPassword
 		if err := sender.SendMail([]string{user.Email}, subject, body); err != nil {
 			log.Fatalf("初期ユーザーの招待に失敗しました: %v", err)
