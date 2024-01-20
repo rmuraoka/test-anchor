@@ -39,11 +39,10 @@ func NewRouter(
 		c.Next()
 	})
 
-	api := r.Group("/api")
-	api.GET("/health", healthHandler.GetHealth)
-	api.POST("/login", authHandler.PostLogin)
+	r.GET("/health", healthHandler.GetHealth)
+	r.POST("/login", authHandler.PostLogin)
 
-	protected := api.Group("/protected")
+	protected := r.Group("/protected")
 	protected.Use(middleware.AuthenticateJWT(), middleware.CheckUserStatus(db))
 	{
 		protected.GET("/statuses", statusHandler.GetStatues)
