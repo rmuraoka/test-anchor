@@ -131,6 +131,7 @@ interface OnlyTestSuite {
 
 interface TestSuiteHeaderProps {
     title: string;
+    testSuiteId: number;
 }
 
 interface TestPlanUpdate {
@@ -444,10 +445,13 @@ const TestPlan: React.FC = () => {
         }
     };
 
-    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title}) => {
+    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title, testSuiteId}) => {
         return (
             <Flex justifyContent="space-between" alignItems="center" mb={4}>
-                <Flex alignItems="center">
+                <Flex
+                    alignItems="center"
+                    id={'testSuite'+testSuiteId.toString()}
+                >
                     <Icon as={SlFolder} mr={2}/>
                     <Text fontSize="lg" fontWeight="bold">{title}</Text>
                 </Flex>
@@ -458,7 +462,7 @@ const TestPlan: React.FC = () => {
     const renderTestSuites = (suites: TestSuite[]) => (
         suites.map(suite => (
             <Box key={suite.name} mb={4} pl={`2em`}>
-                <TestSuiteHeader title={suite.name}/>
+                <TestSuiteHeader title={suite.name} testSuiteId={suite.id}/>
                 <Box mb={4}>
                     {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases)}
                 </Box>
@@ -569,6 +573,13 @@ const TestPlan: React.FC = () => {
         );
     }
 
+    const handleSelect = (selectedKeys: any[]) => {
+        const anchor = document.getElementById('testSuite'+selectedKeys[0]);
+        if (anchor) {
+            anchor.scrollIntoView({ behavior: 'auto', block: 'center'});
+        }
+    };
+
     return (
         <ChakraProvider>
             <Box bg="white" minH="100vh">
@@ -678,7 +689,11 @@ const TestPlan: React.FC = () => {
                                 <Tree
                                     showLine
                                     defaultExpandAll
-                                    treeData={onlyTestSuites}
+                                    onSelect={handleSelect}
+                                    treeData={onlyTestSuites.map(suite => ({
+                                        ...suite,
+                                        selectable: true,
+                                    }))}
                                 />
                             </Box>
                             <Box w="50%" p={5} overflowY="auto" borderRight="1px" borderColor="gray.200">

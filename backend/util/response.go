@@ -59,6 +59,7 @@ type JSONOnlyTestSuite struct {
 }
 
 type TestRunCasesTestSuite struct {
+	ID         uint                    `json:"id"`
 	Name       string                  `json:"name"`
 	TestSuites []TestRunCasesTestSuite `json:"test_suites"`
 	TestCases  []TestRunCase           `json:"test_cases"`

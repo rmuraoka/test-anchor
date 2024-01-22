@@ -391,7 +391,14 @@ const CaseList: React.FC = () => {
                 )}
                 <Box
                     bgColor={isOver ? 'gray.100' : isDragging ? 'BlackAlpha.50' : ''}
-                    height={6}>
+                    height={6}
+                    onClick={() => {
+                        const anchor = document.getElementById('testSuite'+nodeData.key.toString());
+                        if (anchor) {
+                            anchor.scrollIntoView({ behavior: 'auto', block: 'center',});
+                        }
+                    }}
+                >
                     {nodeData.title}
                 </Box>
                 {hoverNodeIndex === index && hoverNodePosition === 'lower' && nodeData.key === hoverNodeKey && (
@@ -1010,6 +1017,7 @@ const CaseList: React.FC = () => {
                 <Editable defaultValue={title}
                           display="flex"
                           submitOnBlur={false}
+                          id={'testSuite'+testSuiteId.toString()}
                           onSubmit={(newTitle) => handleUpdateTestSuiteTitle(newTitle, testSuiteId)}>
                     <EditablePreview fontSize="lg" fontWeight="bold"/>
                     <EditableInput mr={2} onKeyDown={(e) => {

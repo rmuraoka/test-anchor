@@ -308,6 +308,7 @@ func convertToTestRunCaseTestSuites(testSuites []model.TestSuite, testRunCaseMap
 		childTestSuites := childTestSuitesMap[testSuite.ID]
 
 		jsonTestSuites = append(jsonTestSuites, util.TestRunCasesTestSuite{
+			ID:         testSuite.ID,
 			Name:       testSuite.Name,
 			TestSuites: convertToTestRunCaseTestSuites(childTestSuites, testRunCaseMap, childTestSuitesMap),
 			TestCases:  jsonTestRunCases,
