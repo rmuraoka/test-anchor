@@ -68,6 +68,7 @@
   "new_milestone_added": "A new milestone has been added.",
   "new_project_added": "A new project has been added.",
   "new_test_case_added": "A new test case has been added.",
+  "new_test_cases_added": "New test cases has been added.",
   "new_test_plan_added": "A new test plan has been added.",
   "new_test_run_added": "A new test run has been added.",
   "new_test_suite_added": "A new test suite has been added.",
@@ -111,5 +112,9 @@
   "confirm_resend_email": "Would you like to reset your password and resend the invitation email?",
   "select_language": "Select Language",
   "select_assigned_to": "Select a member",
-  "code_help_text": "Please enter in uppercase letters"
+  "code_help_text": "Please enter in uppercase letters",
+  "import_from_csv": "Import from CSV",
+  "export_to_csv": "Export to CSV",
+  "execute_import": "Import",
+  "download_template": "Download Template"
 }

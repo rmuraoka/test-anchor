@@ -305,18 +305,34 @@ func (h *TestCaseHandler) DeleteTestSuite(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-type TestCaseRequestRow struct {
+type TestCasePutRequestRow struct {
 	TestCaseID uint `json:"test_case_id"`
 	OrderIndex int  `json:"index"`
 }
 
-type TestCaseRequest struct {
-	TestSuiteID         uint                 `json:"test_suite_id"`
-	TestCaseRequestRows []TestCaseRequestRow `json:"test_cases"`
+type TestCasePutRequest struct {
+	TestSuiteID         uint                    `json:"test_suite_id"`
+	TestCaseRequestRows []TestCasePutRequestRow `json:"test_cases"`
 }
 
 func (h *TestCaseHandler) PutTestCaseBulk(c *gin.Context) {
-	var req TestCaseRequest
+	projectCode := c.Param("project_code")
+	if projectCode == "" {
+		handleError(c, http.StatusBadRequest, "Project ID is required", nil)
+		return
+	}
+
+	var project model.Project
+	if result := h.DB.Where("code = ?", projectCode).First(&project); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			handleError(c, http.StatusNotFound, "Project not found", result.Error)
+			return
+		}
+		handleError(c, http.StatusInternalServerError, "Failed to retrieve project", result.Error)
+		return
+	}
+
+	var req TestCasePutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -328,6 +344,7 @@ func (h *TestCaseHandler) PutTestCaseBulk(c *gin.Context) {
 		}
 		if err := h.DB.Model(&model.TestCase{}).
 			Where("id = ?", row.TestCaseID).
+			Where("project_id", project.ID).
 			Updates(update).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
 			return
@@ -348,6 +365,22 @@ type TestSuiteRequest struct {
 }
 
 func (h *TestCaseHandler) PutTestSuiteBulk(c *gin.Context) {
+	projectCode := c.Param("project_code")
+	if projectCode == "" {
+		handleError(c, http.StatusBadRequest, "Project ID is required", nil)
+		return
+	}
+
+	var project model.Project
+	if result := h.DB.Where("code = ?", projectCode).First(&project); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			handleError(c, http.StatusNotFound, "Project not found", result.Error)
+			return
+		}
+		handleError(c, http.StatusInternalServerError, "Failed to retrieve project", result.Error)
+		return
+	}
+
 	var req TestSuiteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -360,8 +393,70 @@ func (h *TestCaseHandler) PutTestSuiteBulk(c *gin.Context) {
 		}
 		if err := h.DB.Model(&model.TestSuite{}).
 			Where("id = ?", row.TestSuiteID).
+			Where("project_id = ?", project.ID).
 			Updates(update).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
+}
+
+type TestCasePostRequest struct {
+	TestSuiteName string `json:"test_suite_name"`
+	Title         string `json:"title"`
+	Content       string `json:"content"`
+	MilestoneId   *uint  `json:"milestone_id"`
+	CreatedById   uint   `json:"created_by_id"`
+	UpdatedById   uint   `json:"updated_by_id"`
+}
+
+type TestCasesPostRequest struct {
+	TestCases []TestCasePostRequest `json:"test_cases"`
+}
+
+func (h *TestCaseHandler) PostTestCasesBulk(c *gin.Context) {
+	projectCode := c.Param("project_code")
+	if projectCode == "" {
+		handleError(c, http.StatusBadRequest, "Project Code is required", nil)
+		return
+	}
+
+	var project model.Project
+	if result := h.DB.Where("code = ?", projectCode).First(&project); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			handleError(c, http.StatusNotFound, "Project not found", result.Error)
+			return
+		}
+		handleError(c, http.StatusInternalServerError, "Failed to retrieve project", result.Error)
+		return
+	}
+
+	var req TestCasesPostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	for _, row := range req.TestCases {
+		var testSuite model.TestSuite
+		err := h.DB.Where("name = ? AND project_id = ?", row.TestSuiteName, project.ID).FirstOrCreate(&testSuite, model.TestSuite{ProjectID: project.ID, Name: row.TestSuiteName}).Error
+		if err != nil {
+			handleError(c, http.StatusInternalServerError, "Failed to retrieve or create test suite", err)
+			return
+		}
+
+		insert := map[string]interface{}{
+			"project_id":    project.ID,
+			"test_suite_id": testSuite.ID,
+			"Title":         row.Title,
+			"content":       row.Content,
+			"milestone_id":  row.MilestoneId,
+			"created_by_id": row.CreatedById,
+			"updated_by_id": row.UpdatedById,
+		}
+		if err := h.DB.Model(&model.TestCase{}).Create(insert).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Insert failed"})
 			return
 		}
 	}

@@ -58,13 +58,14 @@ import {SlFolder} from "react-icons/sl";
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
 import {Tree} from 'antd';
-import {PiFolderSimplePlus} from "react-icons/pi";
 import {useParams} from "react-router-dom";
 import Header from "../components/Header";
 import {useTranslation} from "react-i18next";
 import {useApiRequest} from "../components/UseApiRequest";
 import {DndProvider, useDrag, useDrop} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
+import {TbFolderPlus, TbTableExport, TbTableImport} from "react-icons/tb";
+import Papa from 'papaparse';
 
 interface TestCase {
     id: number;
@@ -393,9 +394,9 @@ const CaseList: React.FC = () => {
                     bgColor={isOver ? 'gray.100' : isDragging ? 'BlackAlpha.50' : ''}
                     height={6}
                     onClick={() => {
-                        const anchor = document.getElementById('testSuite'+nodeData.key.toString());
+                        const anchor = document.getElementById('testSuite' + nodeData.key.toString());
                         if (anchor) {
-                            anchor.scrollIntoView({ behavior: 'auto', block: 'center',});
+                            anchor.scrollIntoView({behavior: 'auto', block: 'center',});
                         }
                     }}
                 >
@@ -938,6 +939,41 @@ const CaseList: React.FC = () => {
         }
     };
 
+    const handleAddTestCaseBulk = async (testCases: any[]) => {
+        try {
+            const response = await apiRequest(`/protected/${project_code}/cases/bulk`, {
+                method: 'POST',
+                body: JSON.stringify({test_cases: testCases}),
+            });
+
+            if (response.ok) {
+                toast({
+                    title: t('new_test_cases_added'),
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
+                setEditMode(false);
+                fetchTestCases();
+                fetchMilestones();
+            } else {
+                throw new Error(t('failed_to_add_new_test_case'));
+            }
+        } catch (error) {
+            let errorMessage = t('error_occurred');
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            toast({
+                title: t('error_occurred'),
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
     const onDelete = (testCaseId: React.SetStateAction<number | null>) => {
         setDeletingTestCaseId(testCaseId);
         onDeleteModalOpen();
@@ -1017,7 +1053,7 @@ const CaseList: React.FC = () => {
                 <Editable defaultValue={title}
                           display="flex"
                           submitOnBlur={false}
-                          id={'testSuite'+testSuiteId.toString()}
+                          id={'testSuite' + testSuiteId.toString()}
                           onSubmit={(newTitle) => handleUpdateTestSuiteTitle(newTitle, testSuiteId)}>
                     <EditablePreview fontSize="lg" fontWeight="bold"/>
                     <EditableInput mr={2} onKeyDown={(e) => {
@@ -1184,6 +1220,95 @@ const CaseList: React.FC = () => {
         ))
     );
 
+    const convertToCSV = (testSuites: TestSuite[]): string => {
+        const csvData = testSuites.flatMap(suite =>
+            suite.test_cases?.map(caseItem => ({
+                'Test Suite Name': suite.name,
+                'Test Case Title': caseItem.title,
+                'Content': caseItem.content
+            })) ?? []
+        );
+
+        return Papa.unparse(csvData, {
+            columns: ['Test Suite Name', 'Test Case Title', 'Content']
+        });
+    };
+
+    const downloadCSV = (csvContent: string, fileName: string) => {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleExportClick = () => {
+        const csvContent = convertToCSV(testSuites);
+        downloadCSV(csvContent, "test_suites.csv");
+    };
+
+    const handleDownloadTemplate = () => {
+        const data = [
+            {
+                'TestSuiteName': 'TestSuiteName',
+                'TestCaseTitle': 'TestCaseTitle',
+                'Content': 'Content'
+            }
+        ];
+        let csvContent = Papa.unparse(data, {
+            columns: ['TestSuiteName', 'TestCaseTitle', 'Content']
+        });
+        downloadCSV(csvContent, "test_suites_template.csv");
+    };
+
+    const handleImportClick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv';
+        input.onchange = (e) => {
+            const target = e.target as HTMLInputElement;
+            if (target.files) {
+                const file = target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const content = e.target as FileReader;
+                        if (content.result) {
+                            const text = content.result.toString();
+                            parseAndImportCSV(text);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            }
+        };
+        input.click();
+    };
+
+    const parseAndImportCSV = (csvText: string) => {
+        Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results: any) => {
+                const importedData: TestCase[] = results.data.map((row: { [x: string]: any; }) => ({
+                    test_suite_name: row['TestSuiteName'],
+                    title: row['TestCaseTitle'],
+                    content: row['Content'],
+                    created_by_id: user.id,
+                    updated_by_id: user.id
+                }));
+                handleAddTestCaseBulk(importedData);
+            }
+        });
+    };
+
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value.toLowerCase());
     };
@@ -1223,7 +1348,7 @@ const CaseList: React.FC = () => {
                             {user.permissions && user.permissions.includes('edit') && (
                                 <IconButton
                                     aria-label={t('add_test_suite')}
-                                    icon={<PiFolderSimplePlus/>}
+                                    icon={<TbFolderPlus/>}
                                     colorScheme="gray"
                                     size="sm"
                                     ml={2}
@@ -1233,8 +1358,40 @@ const CaseList: React.FC = () => {
                                             parent_id: null,
                                             name: ''
                                         });
-                                        onTestSuiteAddModalOpen(); // モーダルを開く
+                                        onTestSuiteAddModalOpen();
                                     }}
+                                    mb={2}
+                                />
+                            )}
+                            {user.permissions && user.permissions.includes('edit') && (
+                                <Menu>
+                                    <MenuButton
+                                        as={IconButton}
+                                        aria-label={t('import_from_csv')}
+                                        icon={<TbTableImport />}
+                                        colorScheme="gray"
+                                        size="sm"
+                                        ml={2}
+                                        mb={2}
+                                    />
+                                    <MenuList>
+                                        <MenuItem onClick={handleDownloadTemplate}>
+                                            {t('download_template')}
+                                        </MenuItem>
+                                        <MenuItem onClick={handleImportClick}>
+                                            {t('execute_import')}
+                                        </MenuItem>
+                                    </MenuList>
+                                </Menu>
+                            )}
+                            {user.permissions && user.permissions.includes('edit') && (
+                                <IconButton
+                                    aria-label={t('export_to_csv')}
+                                    icon={<TbTableExport/>}
+                                    colorScheme="gray"
+                                    size="sm"
+                                    ml={2}
+                                    onClick={handleExportClick}
                                     mb={2}
                                 />
                             )}

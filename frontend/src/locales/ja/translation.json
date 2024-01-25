@@ -68,6 +68,7 @@
   "new_milestone_added": "新しいマイルストーンが追加されました。",
   "new_project_added": "新しいプロジェクトが追加されました。",
   "new_test_case_added": "新しいテストケースが追加されました。",
+  "new_test_cases_added": "新しいテストケースが追加されました。",
   "new_test_plan_added": "新しいテストプランが追加されました。",
   "new_test_run_added": "新しいテストランが追加されました。",
   "new_test_suite_added": "新しいテストスイートが追加されました。",
@@ -111,5 +112,9 @@
   "confirm_resend_email": "パスワードを初期化し、招待メールを再送信します。よろしいですか？",
   "select_language": "言語の選択",
   "select_assigned_to": "担当者を選択",
-  "code_help_text": "大文字アルファベットで入力してください"
+  "code_help_text": "大文字アルファベットで入力してください",
+  "import_from_csv": "CSVからインポート",
+  "export_to_csv": "CSVにエクスポート",
+  "execute_import": "インポート",
+  "download_template": "テンプレートをダウンロード"
 }

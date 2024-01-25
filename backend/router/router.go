@@ -71,6 +71,7 @@ func NewRouter(
 		protected.DELETE("/suites/:id", checkPermission("edit", db), testCaseHandler.DeleteTestSuite)
 		protected.PUT("/:project_code/cases/bulk", checkPermission("edit", db), testCaseHandler.PutTestCaseBulk)
 		protected.PUT("/:project_code/suites/bulk", checkPermission("edit", db), testCaseHandler.PutTestSuiteBulk)
+		protected.POST("/:project_code/cases/bulk", checkPermission("edit", db), testCaseHandler.PostTestCasesBulk)
 
 		protected.GET("/:project_code/:test_plan_id/runs", testRunHandler.GetTestRuns)
 		protected.GET("/runs/:id", testRunHandler.GetTestRunCases)
