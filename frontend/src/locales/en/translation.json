@@ -116,5 +116,6 @@
   "import_from_csv": "Import from CSV",
   "export_to_csv": "Export to CSV",
   "execute_import": "Import",
-  "download_template": "Download Template"
+  "download_template": "Download Template",
+  "status_updated": "Status has been updated."
 }

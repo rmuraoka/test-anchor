@@ -141,6 +141,7 @@ func convertCommentToJSON(comment model.Comment) util.Comment {
 		Content:   comment.Content,
 		CreatedBy: convertUserToJSON(comment.CreatedBy),
 		UpdatedBy: convertUserToJSON(comment.UpdatedBy),
+		CreatedAt: comment.CreatedAt.Format("2006-01-02 15:04"),
 	}
 }
 
@@ -197,6 +198,7 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 		}).
 		Preload("Status").
 		Preload("AssignedTo").
+		Preload("Comments.Status").
 		Preload("Comments.CreatedBy").
 		Preload("Comments.UpdatedBy").
 		Preload("Comments").
@@ -425,14 +427,14 @@ func (h *TestRunHandler) PostTestRunCaseComment(c *gin.Context) {
 	}
 
 	var newComment model.Comment
-	if result := h.DB.Preload("CreatedBy").Preload("UpdatedBy").First(&newComment, comment.ID); result.Error != nil {
+	if result := h.DB.Preload("Status").Preload("CreatedBy").Preload("UpdatedBy").First(&newComment, comment.ID); result.Error != nil {
 		handleError(c, http.StatusInternalServerError, "Failed to retrieve records", result.Error)
 		return
 	}
 
 	var status *util.Status
-	if comment.Status != nil {
-		status = &util.Status{ID: comment.Status.ID, Name: comment.Status.Name, Color: comment.Status.Color}
+	if newComment.Status != nil {
+		status = &util.Status{ID: newComment.Status.ID, Name: newComment.Status.Name, Color: newComment.Status.Color}
 	} else {
 		status = nil
 	}
@@ -442,6 +444,7 @@ func (h *TestRunHandler) PostTestRunCaseComment(c *gin.Context) {
 		Content:   newComment.Content,
 		CreatedBy: convertUserToJSON(newComment.CreatedBy),
 		UpdatedBy: convertUserToJSON(newComment.UpdatedBy),
+		CreatedAt: newComment.CreatedAt.Format("2006-01-02 15:04"),
 	}
 
 	c.JSON(http.StatusCreated, commentJson)

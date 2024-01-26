@@ -116,5 +116,6 @@
   "import_from_csv": "CSVからインポート",
   "export_to_csv": "CSVにエクスポート",
   "execute_import": "インポート",
-  "download_template": "テンプレートをダウンロード"
+  "download_template": "テンプレートをダウンロード",
+  "status_updated": "ステータスを更新しました。"
 }

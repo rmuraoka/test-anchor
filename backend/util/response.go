@@ -108,6 +108,7 @@ type Comment struct {
 	Content   string  `json:"content"`
 	CreatedBy User    `json:"created_by"`
 	UpdatedBy User    `json:"updated_by"`
+	CreatedAt string  `json:"created_at"`
 }
 
 type User struct {

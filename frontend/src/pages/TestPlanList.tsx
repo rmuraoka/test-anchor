@@ -196,7 +196,7 @@ const TestPlanList: React.FC = () => {
                                 <Th>{t('started_at')}</Th>
                                 <Th>{t('completed_at')}</Th>
                                 <Th>{t('last_updated_by')}</Th>
-                                {user.permissions && user.permissions.includes('edit') && (<Th>{t('action')}</Th>)}
+                                {user.permissions && user.permissions.includes('edit') && (<Th>{t('actions')}</Th>)}
                             </Tr>
                         </Thead>
                         <Tbody>

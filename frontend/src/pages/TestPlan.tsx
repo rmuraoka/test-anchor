@@ -605,7 +605,7 @@ const TestPlan: React.FC = () => {
             <Box bg="white" minH="100vh">
                 {/* ヘッダー */}
                 <Header project_code={project_code} is_show_menu={true}/>
-                <Container maxW="container.xl" py={10} pt="6rem">
+                <Container maxW="container.xl" py={10} pt="6rem" pb="6rem">
                     {isLoading ? (
                         <Flex justify="center">
                             <Spinner size="xl"/>

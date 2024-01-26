@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {
-    Avatar,
+    Avatar, Badge,
     Box,
     Button,
     ButtonGroup,
@@ -74,6 +74,7 @@ interface Comment {
     content: string;
     status: Status;
     created_by: User;
+    created_at: string;
 }
 
 interface User {
@@ -112,7 +113,6 @@ const RunCaseList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [members, setMembers] = useState<User[]>([]);
 
-    // APIからテストケースを取得
     const fetchTestCases = async () => {
         try {
             const response = await apiRequest(`/protected/runs/${test_run_id}`);
@@ -311,10 +311,29 @@ const RunCaseList: React.FC = () => {
                         status_id: statusId
                     })
                 });
-
                 if (!response.ok) {
                     throw new Error(t('status_update_failed'));
                 }
+                const commentResponse = await apiRequest(`/protected/runs/cases/comments`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        test_run_case_id: selectedTestCase.id,
+                        status_id: statusId,
+                        content: t('status_updated'),
+                        created_by_id: user.id,
+                        updated_by_id: user.id,
+                    }),
+                });
+                if (!commentResponse.ok) {
+                    throw new Error(t('status_update_failed'));
+                }
+                const responseData = await commentResponse.json();
+                const commentData: Comment = responseData as Comment;
+                setSelectedTestCase({
+                    ...selectedTestCase,
+                    comments: [...selectedTestCase.comments, commentData]
+                });
+
                 fetchTestCases();
             } catch (error) {
                 let errorMessage = t('error_occurred');
@@ -374,7 +393,6 @@ const RunCaseList: React.FC = () => {
             });
         }
     };
-
 
     const renderStatusButton = () => {
         switch (testRunStatus) {
@@ -491,9 +509,11 @@ const RunCaseList: React.FC = () => {
         ));
     };
 
-    const renderComments = (comments: any[]) => {
+    const renderComments = (comments: Comment[]) => {
         return comments.map((comment, index) => (
-            <Box key={index} mb={2} p={4} border="1px" borderColor="gray.200" borderRadius="md" w="90%">
+            <Box key={index} mb={2} paddingX={2} paddingY={1} border="1px" borderColor="gray.200" borderRadius="md" w="90%">
+                <Text fontSize='sm' color='gray.500' mb='0.5em'>{comment.created_at}</Text>
+                {comment.status && (<Badge colorScheme={comment.status.color}>{comment.status.name}</Badge>)}
                 <ReactMarkdown remarkPlugins={[gfm]} components={{
                     h1: ({node, ...props}) => <Heading as="h1" size="xl" mt={6}
                                                        mb={4} {...props} />,
@@ -513,7 +533,7 @@ const RunCaseList: React.FC = () => {
                 }}>
                     {comment.content}
                 </ReactMarkdown>
-                <Flex justify="space-between" mt={2}>
+                <Flex justify="space-between" mt={1}>
                     <Text fontSize="sm">by {comment.created_by.name}</Text>
                 </Flex>
             </Box>
@@ -531,7 +551,7 @@ const RunCaseList: React.FC = () => {
         <ChakraProvider>
             <Header project_code={project_code} is_show_menu={true}/>
             <Flex h="100vh">
-                <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
+                <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem" pb="6rem">
                     <Input
                         placeholder={t('search_test_case')}
                         value={searchTerm}
@@ -550,12 +570,12 @@ const RunCaseList: React.FC = () => {
                         />
                     </Box>
                 </Box>
-                <Box w="50%" p={1} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem">
+                <Box w="50%" p={1} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem" pb="6rem">
                     <Box p={1}>
                         {renderTestSuites(testSuites)}
                     </Box>
                 </Box>
-                <Box w="30%" p={5} pt="6rem" overflowY="auto">
+                <Box w="30%" p={5} pt="6rem" overflowY="auto" pb="6rem">
                     {selectedTestCase && (
                         <VStack align="start">
                             {editMode ? (
