@@ -130,8 +130,9 @@ interface OnlyTestSuite {
 }
 
 interface TestSuiteHeaderProps {
-    title: string;
-    testSuiteId: number;
+    testSuite: TestSuite;
+    selectedTestCaseIds: number[];
+    setSelectedTestCaseIds: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 interface TestPlanUpdate {
@@ -224,7 +225,7 @@ const TestPlan: React.FC = () => {
                 method: 'POST',
                 body: JSON.stringify({
                     test_case_ids: selectedTestCaseIds,
-                    test_run_id: selectedTestRun?.id // 選択されたテストランのID
+                    test_run_id: selectedTestRun?.id
                 })
             });
 
@@ -397,13 +398,13 @@ const TestPlan: React.FC = () => {
             <Tbody>
                 {testCases.map(testCase => (
                     <Tr cursor="pointer" _hover={{bg: "gray.100"}} onClick={() => handleTestCaseClick(testCase)}>
-                        <Td borderBottom="1px" borderColor="gray.200" width="30px">
+                        <Td borderBottom="1px" borderColor="gray.200" width="30px" paddingY="0">
                             <Checkbox
                                 onChange={e => handleCheckboxChange(testCase.id, e.target.checked)}
                                 isChecked={selectedTestCaseIds.includes(testCase.id)}
                             />
                         </Td>
-                        <Td borderBottom="1px" borderColor="gray.200">{testCase.title}</Td>
+                        <Td borderBottom="1px" borderColor="gray.200" paddingY="0.6em"><Text fontSize="sm">{testCase.title}</Text></Td>
                     </Tr>
                 ))}
             </Tbody>
@@ -445,15 +446,34 @@ const TestPlan: React.FC = () => {
         }
     };
 
-    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title, testSuiteId}) => {
+    const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({testSuite, selectedTestCaseIds, setSelectedTestCaseIds}) => {
+        const isAllChecked = testSuite.test_cases?.every(testCase => selectedTestCaseIds.includes(testCase.id));
+        const handleTestSuiteCheckboxChange = (checked: boolean) => {
+            if (checked) {
+                const newSelectedIds = Array.from(new Set([...selectedTestCaseIds, ...testSuite.test_cases!.map(tc => tc.id)]));
+                const count = testSuite.test_cases ? testSuite.test_cases.length : 0;
+                setSelectedCount(selectedCount + count);
+                setSelectedTestCaseIds(newSelectedIds);
+            } else {
+                const newSelectedIds = selectedTestCaseIds.filter(id => !testSuite.test_cases!.some(tc => tc.id === id));
+                const count = testSuite.test_cases ? testSuite.test_cases.length : 0;
+                setSelectedCount(selectedCount - count);
+                setSelectedTestCaseIds(newSelectedIds);
+            }
+        };
+
         return (
-            <Flex justifyContent="space-between" alignItems="center" mb={4}>
+            <Flex justifyContent="space-between" alignItems="center" mb={1}>
                 <Flex
                     alignItems="center"
-                    id={'testSuite'+testSuiteId.toString()}
+                    id={'testSuite'+testSuite.id.toString()}
                 >
-                    <Icon as={SlFolder} mr={2}/>
-                    <Text fontSize="lg" fontWeight="bold">{title}</Text>
+                    <Checkbox
+                        isChecked={isAllChecked}
+                        onChange={e => handleTestSuiteCheckboxChange(e.target.checked)}
+                        mr={2}
+                    />
+                    <Text fontSize="lg" fontWeight="bold">{testSuite.name}</Text>
                 </Flex>
             </Flex>
         );
@@ -462,7 +482,7 @@ const TestPlan: React.FC = () => {
     const renderTestSuites = (suites: TestSuite[]) => (
         suites.map(suite => (
             <Box key={suite.name} mb={4} pl={`2em`}>
-                <TestSuiteHeader title={suite.name} testSuiteId={suite.id}/>
+                <TestSuiteHeader testSuite={suite} selectedTestCaseIds={selectedTestCaseIds} setSelectedTestCaseIds={setSelectedTestCaseIds}/>
                 <Box mb={4}>
                     {suite.test_cases && suite.test_cases.length > 0 && renderTestCases(suite.test_cases)}
                 </Box>
