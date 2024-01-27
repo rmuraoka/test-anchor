@@ -38,10 +38,17 @@ jobs:
           export USE_TLS="${{ secrets.USE_TLS }}"
           export BACKEND_URL="${{ secrets.BACKEND_URL }}"
           export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
-          docker-compose -f docker-compose.yml -f docker-compose.test.yml up
+          docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
 
       - name: Run Playwright Tests
-        run: npm test
+        run: |
+          echo "Waiting for services to be ready..."
+          until curl --output /dev/null --silent --head --fail http://localhost:3001; do
+            printf '.'
+            sleep 5
+          done
+          echo "Services are ready. Running tests..."
+          npm test
 
       - name: Shutdown Docker Compose
         if: always()
