@@ -22,6 +22,21 @@ jobs:
 
       - name: Set up Docker Compose
         run: |
+          export DB_HOST="${{ secrets.DB_HOST }}"
+          export DB_USER="${{ secrets.DB_USER }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}"
+          export FRONTEND_ORIGIN="${{ secrets.FRONTEND_ORIGIN }}"
+          export INITIAL_USER_EMAIL="${{ secrets.INITIAL_USER_EMAIL }}"
+          export INITIAL_USER_NAME="${{ secrets.INITIAL_USER_NAME }}"
+          export MAIL_HOST="${{ secrets.MAIL_HOST }}"
+          export MAIL_PORT="${{ secrets.MAIL_PORT }}"
+          export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+          export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+          export FROM_EMAIL="${{ secrets.FROM_EMAIL }}"
+          export USE_TLS="${{ secrets.USE_TLS }}"
+          export BACKEND_URL="${{ secrets.BACKEND_URL }}"
+          export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
           docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
 
       - name: Run Playwright Tests
