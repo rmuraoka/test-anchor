@@ -11,14 +11,23 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install
+
       - name: Set up Docker Compose
         run: |
           docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
 
       - name: Run Playwright Tests
-        run: |
-          npm install
-          npm run test
+        run: npm run test
 
       - name: Shutdown Docker Compose
         if: always()
