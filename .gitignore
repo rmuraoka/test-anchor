@@ -20,5 +20,5 @@
 # Go workspace file
 go.work
 .env
-/backend/command/register_user
 /backend/main
+/node_modules/

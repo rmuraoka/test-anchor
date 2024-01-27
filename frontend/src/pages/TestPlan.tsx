@@ -670,11 +670,12 @@ const TestPlan: React.FC = () => {
                         <FormControl>
                             <FormLabel>{t('title')}</FormLabel>
                             <Input value={newTestRun.title}
+                                   data-test='input testrun title'
                                    onChange={(e) => setNewTestRun({...newTestRun, title: e.target.value})}/>
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleAddTestRun}>{t('add')}</Button>
+                        <Button data-test='button testrun add' colorScheme="blue" mr={3} onClick={handleAddTestRun}>{t('add')}</Button>
                         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
                     </ModalFooter>
                 </ModalContent>

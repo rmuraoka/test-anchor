@@ -153,14 +153,18 @@ const Home: React.FC = () => {
                     <ModalBody>
                         <FormControl isRequired>
                             <FormLabel>{t('project_name')}</FormLabel>
-                            <Input value={newProject.title}
+                            <Input data-test="input title"
+                                   value={newProject.title}
                                    onChange={(e) => {
                                        setNewProject({...newProject, title: e.target.value});
                                        validateForm();
-                                   }}/>
+                                   }}
+                                   onBlur={() => validateForm()}
+                            />
                             <FormLabel mt={2}>{t('code')}</FormLabel>
                             <FormHelperText color="gray.500">{t('code_help_text')}</FormHelperText>
-                            <Input value={newProject.code}
+                            <Input data-test="input code"
+                                   value={newProject.code}
                                    onChange={(e) => {
                                        const inputValue = e.target.value;
                                        const isValidInput = /^[A-Z0-9]*$/.test(inputValue);
@@ -180,17 +184,24 @@ const Home: React.FC = () => {
                                            return;
                                        }
                                    }}
+                                   onBlur={() => validateForm()}
                             />
                             <FormLabel mt={2}>{t('description')}</FormLabel>
-                            <Input value={newProject.description}
+                            <Input data-test="input description"
+                                   value={newProject.description}
                                    onChange={(e) => {
                                        setNewProject({...newProject, description: e.target.value});
                                        validateForm();
-                                   }}/>
+                                   }}
+                                   onBlur={() => validateForm()}
+                            />
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleAddProject}
+                        <Button colorScheme="blue"
+                                data-test="button project add"
+                                mr={3}
+                                onClick={handleAddProject}
                                 isDisabled={isSubmitDisabled}>{t('add')}</Button>
                         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
                     </ModalFooter>

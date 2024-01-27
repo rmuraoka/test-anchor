@@ -1020,14 +1020,14 @@ const CaseList: React.FC = () => {
                                     />)}
                                     {selectedTestCase && selectedTestCase.id === testCase.id ?
                                         <IconButton
-                                            aria-label={t('open_test_case')}
+                                            aria-label={t('close_test_case')}
                                             variant="ghost"
                                             icon={<ChevronLeftIcon/>}
                                             size="sm"
                                             onClick={() => handleTestCaseClick(null)}
                                         /> :
                                         <IconButton
-                                            aria-label={t('close_test_case')}
+                                            aria-label={t('open_test_case')}
                                             variant="ghost"
                                             icon={<ChevronRightIcon/>}
                                             size="sm"
@@ -1406,6 +1406,7 @@ const CaseList: React.FC = () => {
                                             <FormControl>
                                                 <FormLabel>{t('title')}</FormLabel>
                                                 <Input value={newTestCase.title}
+                                                       data-test="input testcase title"
                                                        onChange={(e) => setNewTestCase({
                                                            ...newTestCase,
                                                            title: e.target.value
@@ -1414,6 +1415,7 @@ const CaseList: React.FC = () => {
                                             <FormControl>
                                                 <FormLabel>{t('content')}</FormLabel>
                                                 <Textarea value={newTestCase.content}
+                                                          data-test="textarea testcase content"
                                                           height={200}
                                                           onChange={(e) => setNewTestCase({
                                                               ...newTestCase,
@@ -1426,7 +1428,10 @@ const CaseList: React.FC = () => {
                                         <Button variant="outline" mr={3} onClick={onTestCaseAddModalClose}>
                                             {t('cancel')}
                                         </Button>
-                                        <Button colorScheme="blue" onClick={handleAddTestCase}>
+                                        <Button
+                                            data-test="button testcase add"
+                                            colorScheme="blue"
+                                            onClick={handleAddTestCase}>
                                             {t('add')}
                                         </Button>
                                     </ModalFooter>
@@ -1441,6 +1446,7 @@ const CaseList: React.FC = () => {
                                         <FormControl>
                                             <FormLabel>{t('name')}</FormLabel>
                                             <Input value={newTestSuite.name}
+                                                   data-test="input testsuite name"
                                                    onChange={(e) => setNewTestSuite({
                                                        ...newTestSuite,
                                                        name: e.target.value
@@ -1448,7 +1454,12 @@ const CaseList: React.FC = () => {
                                         </FormControl>
                                     </ModalBody>
                                     <ModalFooter>
-                                        <Button colorScheme="blue" mr={3} onClick={handleAddTestSuite}>
+                                        <Button
+                                            data-test="button testsuite add"
+                                            colorScheme="blue"
+                                            mr={3}
+                                            onClick={handleAddTestSuite}
+                                        >
                                             {t('add')}
                                         </Button>
                                         <Button onClick={onTestSuiteAddModalClose}>{t('cancel')}</Button>
