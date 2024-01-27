@@ -42,6 +42,7 @@ jobs:
 
       - name: Run Playwright Tests
         run: |
+          export INITIAL_USER_EMAIL="${{ secrets.INITIAL_USER_EMAIL }}"
           echo "Waiting for services to be ready..."
           until curl --output /dev/null --silent --head --fail http://localhost:3001; do
             printf '.'
