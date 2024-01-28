@@ -447,14 +447,14 @@ const RunCaseList: React.FC = () => {
                                     <Box mx={2}>
                                         {selectedTestCase && selectedTestCase.id === testRunCase.id ?
                                             <IconButton
-                                                aria-label={t('open_test_case')}
+                                                aria-label={t('close_test_case')}
                                                 icon={<ChevronLeftIcon/>}
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => handleTestCaseClick(null)}
                                             /> :
                                             <IconButton
-                                                aria-label={t('close_test_case')}
+                                                aria-label={t('open_test_case')}
                                                 icon={<ChevronRightIcon/>}
                                                 variant="ghost"
                                                 size="sm"

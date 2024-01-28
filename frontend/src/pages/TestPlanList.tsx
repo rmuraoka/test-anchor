@@ -233,11 +233,12 @@ const TestPlanList: React.FC = () => {
                         <FormControl>
                             <FormLabel>{t('title')}</FormLabel>
                             <Input value={newTestPlan.title}
+                                   data-test='input testplan title'
                                    onChange={(e) => setNewTestPlan({...newTestPlan, title: e.target.value})}/>
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme="blue" mr={3} onClick={handleAddTestPlan}>{t('add')}</Button>
+                        <Button data-test='button testplan add' colorScheme="blue" mr={3} onClick={handleAddTestPlan}>{t('add')}</Button>
                         <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
                     </ModalFooter>
                 </ModalContent>

@@ -1,0 +1,74 @@
+name: Playwright Docker Test
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Set up Docker Compose
+        run: |
+          export DB_HOST="${{ secrets.DB_HOST }}"
+          export DB_USER="${{ secrets.DB_USER }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_NAME="${{ secrets.DB_NAME }}"
+          export JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}"
+          export FRONTEND_ORIGIN="${{ secrets.FRONTEND_ORIGIN }}"
+          export INITIAL_USER_EMAIL="${{ secrets.INITIAL_USER_EMAIL }}"
+          export INITIAL_USER_NAME="${{ secrets.INITIAL_USER_NAME }}"
+          export MAIL_HOST="${{ secrets.MAIL_HOST }}"
+          export MAIL_PORT="${{ secrets.MAIL_PORT }}"
+          export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+          export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+          export FROM_EMAIL="${{ secrets.FROM_EMAIL }}"
+          export USE_TLS="${{ secrets.USE_TLS }}"
+          export BACKEND_URL="${{ secrets.BACKEND_URL }}"
+          export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
+          docker-compose -f docker-compose.yml -f docker-compose.test.yml up -d
+
+      - name: Run Playwright Tests
+        run: |
+          export TEST_LOGIN_PASSWORD=""
+          export INITIAL_USER_EMAIL="${{ secrets.INITIAL_USER_EMAIL }}"
+          echo "Waiting for services to be ready..."
+          until curl --output /dev/null --silent --head --fail http://localhost:3001; do
+            printf '.'
+            sleep 5
+          done
+          echo "Services are ready. Running tests..."
+          npm test
+
+      - name: Shutdown Docker Compose
+        if: always()
+        run: |
+          export DB_HOST="${{ secrets.DB_HOST }}"
+          export DB_USER="${{ secrets.DB_USER }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_NAME="${{ secrets.DB_NAME }}"
+          export JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}"
+          export FRONTEND_ORIGIN="${{ secrets.FRONTEND_ORIGIN }}"
+          export INITIAL_USER_EMAIL="${{ secrets.INITIAL_USER_EMAIL }}"
+          export INITIAL_USER_NAME="${{ secrets.INITIAL_USER_NAME }}"
+          export MAIL_HOST="${{ secrets.MAIL_HOST }}"
+          export MAIL_PORT="${{ secrets.MAIL_PORT }}"
+          export MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}"
+          export MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+          export FROM_EMAIL="${{ secrets.FROM_EMAIL }}"
+          export USE_TLS="${{ secrets.USE_TLS }}"
+          export BACKEND_URL="${{ secrets.BACKEND_URL }}"
+          export MYSQL_ROOT_PASSWORD="${{ secrets.MYSQL_ROOT_PASSWORD }}"
+          docker-compose -f docker-compose.yml -f docker-compose.test.yml down

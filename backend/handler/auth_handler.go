@@ -44,13 +44,13 @@ func (h *AuthHandler) PostLogin(c *gin.Context) {
 
 	// パスワードのチェック
 	if !checkPasswordHash(input.Password, userHashedPassword) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "認証に失敗しました"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed"})
 		return
 	}
 
 	token, err := middleware.GenerateJWT(input.Email)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "トークンの生成に失敗しました"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 	var permissions []string

@@ -18,6 +18,28 @@ Thank you for your interest in contributing to the TestAnchor project! Our proje
 - When adding new features, also add relevant tests.
 - Ensure that existing tests are not broken.
 
+### Backend
+- The instructions to run the backend tests are as follows:
+```
+cd backend
+go test ./...
+```
+
+### E2E Tests
+- The instructions to run the E2E tests are as follows:
+- To avoid impacting the development environment, the containers are separate.
+```
+docker-compose --env-file .env.test -f docker-compose.yml -f docker-compose.test.yml up --build -d
+npm test
+docker-compose --env-file .env.test -f docker-compose.yml -f docker-compose.test.yml down
+```
+Please create a `.env.test` file. Its basic contents are the same as `.env`, but with the following differences:
+
+- `MAIL_HOST`: Set it to `mailhog`.
+- `MAIL_PORT`: Use the mailhog port number (1025).
+- `USE_TLS`: Set to `false`.
+- `TEST_LOGIN_PASSWORD`: If an initial user has already been created, specify the password. This will skip the password verification process.
+
 ## Documentation
 - Update the documentation as necessary for new features and changes.
 
