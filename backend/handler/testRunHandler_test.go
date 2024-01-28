@@ -175,6 +175,18 @@ func TestGetTestRunCases(t *testing.T) {
 		WithArgs(testRunID).
 		WillReturnRows(testRunRow)
 
+	testRunCaseStatusRows := sqlmock.NewRows([]string{"id", "test_run_id", "test_case_id", "status_id", "assigned_to_id"}).
+		AddRow(testRunCaseID, testRunID, testCaseID, statusID, assignedToID)
+	mock.ExpectQuery("^SELECT \\* FROM `test_run_cases`").
+		WithArgs(testRunID).
+		WillReturnRows(testRunCaseStatusRows)
+
+	testRunStatusRows := sqlmock.NewRows([]string{"id", "name"}).
+		AddRow(statusID, "Status Name")
+	mock.ExpectQuery("^SELECT \\* FROM `statuses`").
+		WithArgs(statusID).
+		WillReturnRows(testRunStatusRows)
+
 	// TestRunCaseテーブルからのクエリを期待
 	testRunCaseRows := sqlmock.NewRows([]string{"id", "test_run_id", "test_case_id", "status_id", "assigned_to_id"}).
 		AddRow(testRunCaseID, testRunID, testCaseID, statusID, assignedToID)

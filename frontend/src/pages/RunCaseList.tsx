@@ -4,7 +4,7 @@ import {
     Box,
     Button,
     ButtonGroup,
-    ChakraProvider,
+    ChakraProvider, Container, Divider,
     Flex,
     FormControl,
     FormLabel,
@@ -26,7 +26,7 @@ import {
     Textarea,
     Tr,
     UnorderedList,
-    useToast,
+    useToast, useToken,
     VStack
 } from '@chakra-ui/react';
 import {ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, TimeIcon} from '@chakra-ui/icons';
@@ -38,6 +38,8 @@ import {useNavigate, useParams} from "react-router-dom";
 import Header from "../components/Header";
 import {useTranslation} from "react-i18next";
 import {useApiRequest} from "../components/UseApiRequest";
+import {ChartOptions} from "chart.js";
+import {Pie} from "react-chartjs-2";
 
 interface TestRunCase {
     id: number;
@@ -95,6 +97,12 @@ interface TestRunUpdate {
     finalized_test_cases?: string;
 }
 
+interface Chart {
+    "name": string;
+    "color": string;
+    "count": number;
+}
+
 const RunCaseList: React.FC = () => {
     const [testPlanId, setTestPlanId] = useState<number>(0);
     const [testRunStatus, setTestRunStatus] = useState<string>('');
@@ -112,6 +120,7 @@ const RunCaseList: React.FC = () => {
     const [statuses, setStatuses] = useState<Status[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [members, setMembers] = useState<User[]>([]);
+    const [charts, setCharts] = useState<Chart[]>([]);
 
     const fetchTestCases = async () => {
         try {
@@ -122,6 +131,7 @@ const RunCaseList: React.FC = () => {
             setTestRunStatus(data.status);
             setTestSuites(data.entities);
             setOnlyTestSuites(data.folders)
+            setCharts(data.charts);
         } catch (error) {
             console.error('Error fetching TestCases:', error);
         }
@@ -410,6 +420,78 @@ const RunCaseList: React.FC = () => {
         }
     };
 
+    function Chart() {
+        const [red300, green300, gray300, orange300, yellow300, teal300, blue300, cyan300, purple300, pink300] =
+            useToken("colors", ["red.300", "green.300", "gray.300", "orange.300", "yellow.300", "teal.300", "blue.300", "cyan.300", "purple.300", "pink.300"]);
+        const hasData = charts.some(chart => chart.count > 0);
+        if (!hasData) {
+            return null;
+        }
+
+        const data = {
+            labels: charts.map(chart => chart.name),
+            datasets: [
+                {
+                    data: charts.map(chart => chart.count),
+                    backgroundColor: charts.map(chart => {
+                        switch (chart.color) {
+                            case "red":
+                                return red300;
+                            case "orange":
+                                return orange300;
+                            case "yellow":
+                                return yellow300;
+                            case "green":
+                                return green300;
+                            case "teal":
+                                return teal300;
+                            case "blue":
+                                return blue300;
+                            case "cyan":
+                                return cyan300;
+                            case "purple":
+                                return purple300;
+                            case "pink":
+                                return pink300;
+                            case "gray":
+                            default:
+                                return gray300; // デフォルトの色
+                        }
+                    }),
+                    borderWidth: 0,
+                },
+            ],
+        };
+
+        const options: ChartOptions<"pie"> = {
+            responsive: true,
+            animation: {
+                duration: 0
+            },
+            plugins: {
+                legend: {
+                    display: false,
+                },
+                title: {
+                    display: false,
+                    text: '',
+                },
+            },
+        };
+
+        return (
+            <Container maxW="container.xl" py={3}>
+                <Box borderColor="gray.200" borderRadius="md">
+                    <Flex direction="column" justifyContent="center" alignItems="center">
+                        <Box width={"200px"}>
+                            <Pie data={data} options={options}/>
+                        </Box>
+                    </Flex>
+                </Box>
+            </Container>
+        );
+    }
+
     const filterTestCases = (testRunCases: TestRunCase[]) => {
         return testRunCases
             .filter(tc => tc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -551,14 +633,14 @@ const RunCaseList: React.FC = () => {
         <ChakraProvider>
             <Header project_code={project_code} is_show_menu={true}/>
             <Flex h="100vh">
-                <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem" pb="6rem">
+                <Box w="20%" p={5} borderRight="1px" borderColor="gray.200" pt="6rem">
                     <Input
                         placeholder={t('search_test_case')}
                         value={searchTerm}
                         onChange={handleSearchChange}
                         mb={4}
                     />
-                    <Box overflowY="auto" flex="1">
+                    <Box height="50%" overflowY="auto">
                         <Tree
                             showLine
                             defaultExpandAll
@@ -569,6 +651,8 @@ const RunCaseList: React.FC = () => {
                             }))}
                         />
                     </Box>
+                    <Divider />
+                    <Chart />
                 </Box>
                 <Box w="50%" p={1} overflowY="auto" borderRight="1px" borderColor="gray.200" pt="6rem" pb="6rem">
                     <Box p={1}>

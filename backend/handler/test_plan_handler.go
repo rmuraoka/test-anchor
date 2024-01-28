@@ -175,7 +175,7 @@ func aggregateStatusCounts(testRuns []model.TestRun) []util.Chart {
 	for status, count := range statusCounts {
 		chart := util.Chart{
 			Name:  status,
-			Color: statusColors[status], // ステータスの色を使用
+			Color: statusColors[status],
 			Count: count,
 		}
 		charts = append(charts, chart)
