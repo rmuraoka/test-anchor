@@ -1,0 +1,1831 @@
+swagger: "2.0"
+info:
+  title: Test Management API
+  description: API documentation for the backend test management system.
+  version: 1.0.0
+host: localhost:8000
+basePath: /
+schemes:
+  - http
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: |
+      For accessing the protected routes, you must use the following format in the Authorization header:
+      Bearer <your_access_token_here>
+paths:
+  /login:
+    post:
+      summary: User Login
+      description: Authenticates a user and returns an access token.
+      tags:
+        - Authentication
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/Login'
+      responses:
+        200:
+          description: Successful login, returns token.
+          schema:
+            $ref: '#/definitions/TokenResponse'
+        401:
+          description: Unauthorized access.
+  /health:
+    get:
+      summary: Health Check
+      description: Returns the health status of the API.
+      tags:
+        - System
+      responses:
+        '200':
+          description: Successful response indicating the API is running.
+
+  /protected/statuses:
+    get:
+      summary: Get Statuses
+      description: Retrieves all statuses available in the system.
+      tags:
+        - Statuses
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: List of statuses.
+          schema:
+            type: object
+            $ref: '#/definitions/StatusesResponse'
+
+  /protected/roles:
+    get:
+      summary: Get Roles
+      description: Retrieves all user roles available in the system. Requires admin permissions.
+      tags:
+        - Roles
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: List of user roles.
+          schema:
+            type: object
+            $ref: '#/definitions/RolesResponse'
+        401:
+          description: Unauthorized access.
+        403:
+          description: Access forbidden due to insufficient permissions.
+
+  /protected/members:
+    get:
+      summary: Get Members
+      description: Retrieves a list of all members.
+      tags:
+        - Members
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: List of members.
+          schema:
+            type: object
+            $ref: '#/definitions/MemberResponse'
+        401:
+          description: Unauthorized access.
+    post:
+      summary: Add Member
+      description: Adds a new member to the system. Requires admin permissions.
+      tags:
+        - Members
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewMemberForAdminEntity'
+      responses:
+        201:
+          description: Member added successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/admin/members:
+    get:
+      summary: Get Admin Members
+      description: Retrieves a list of members with admin privileges. Requires admin permissions.
+      tags:
+        - Members
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: List of admin members.
+          schema:
+            type: object
+            $ref: '#/definitions/MemberForAdminResponse'
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/members/{id}:
+    get:
+      summary: Get Member by ID
+      description: Retrieves a specific member by their ID. Requires admin permissions.
+      tags:
+        - Members
+      security:
+        - Bearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Member details.
+          schema:
+            $ref: '#/definitions/MemberForAdminEntity'
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Member not found.
+    put:
+      summary: Update Member
+      description: Updates details of an existing member.
+      tags:
+        - Members
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateMemberForAdminEntity'
+      responses:
+        200:
+          description: Member updated successfully.
+        401:
+          description: Unauthorized access.
+        404:
+          description: Member not found.
+    delete:
+      summary: Delete Member
+      description: Deletes a member from the system. Requires admin permissions.
+      tags:
+        - Members
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Member deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Member not found.
+
+  /protected/projects:
+    get:
+      summary: Get Projects
+      description: Retrieves a list of all projects.
+      tags:
+        - Projects
+      security:
+        - Bearer: [ ]
+      responses:
+        200:
+          description: List of projects.
+          schema:
+            type: object
+            $ref: '#/definitions/ProjectResponse'
+        401:
+          description: Unauthorized access.
+
+    post:
+      summary: Add Project
+      description: Adds a new project to the system. Requires edit permissions.
+      tags:
+        - Projects
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewProjectEntity'
+      responses:
+        201:
+          description: Project added successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/projects/{project_code}:
+    get:
+      summary: Get Project by Code
+      description: Retrieves a specific project by its code.
+      tags:
+        - Projects
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Project details.
+          schema:
+            $ref: '#/definitions/ProjectEntity'
+        401:
+          description: Unauthorized access.
+        404:
+          description: Project not found.
+
+  /protected/projects/{id}:
+    put:
+      summary: Update Project
+      description: Updates details of an existing project. Requires edit permissions.
+      tags:
+        - Projects
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewProjectEntity'
+      responses:
+        200:
+          description: Project updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Project not found.
+
+    delete:
+      summary: Delete Project
+      description: Deletes a project from the system. Requires edit permissions.
+      tags:
+        - Projects
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Project deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Project not found.
+
+  /protected/{project_code}/cases:
+    get:
+      summary: Get Test Cases
+      description: Retrieves a list of test cases for a specific project.
+      tags:
+        - Test Cases
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: List of test cases.
+          schema:
+            type: object
+            $ref: '#/definitions/TestCaseResponse'
+        401:
+          description: Unauthorized access.
+
+  /protected/cases/{id}:
+    get:
+      summary: Get Test Case by ID
+      description: Retrieves a specific test case by its ID.
+      tags:
+        - Test Cases
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Test case details.
+          schema:
+            $ref: '#/definitions/TestCase'
+        401:
+          description: Unauthorized access.
+        404:
+          description: Test case not found.
+
+    put:
+      summary: Update Test Case
+      description: Updates details of an existing test case. Requires edit permissions.
+      tags:
+        - Test Cases
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateTestCaseEntity'
+      responses:
+        200:
+          description: Test case updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test case not found.
+
+    delete:
+      summary: Delete Test Case
+      description: Deletes a test case from the system. Requires edit permissions.
+      tags:
+        - Test Cases
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Test case deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test case not found.
+
+  /protected/cases:
+    post:
+      summary: Add Test Case
+      description: Adds a new test case to the system. Requires edit permissions.
+      tags:
+        - Test Cases
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestCaseEntity'
+      responses:
+        201:
+          description: Test case added successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/{project_code}/cases/bulk:
+    put:
+      summary: Bulk Update Test Cases
+      description: Updates multiple test cases at once for a specific project. Requires edit permissions.
+      tags:
+        - Test Cases
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            $ref: '#/definitions/UpdateTestCaseBulkRequest'
+      responses:
+        200:
+          description: Test cases updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+    post:
+      summary: Bulk Add Test Cases
+      description: Adds multiple new test cases at once to a specific project. Requires edit permissions.
+      tags:
+        - Test Cases
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            $ref: '#/definitions/NewTestCaseBulkRequest'
+      responses:
+        201:
+          description: Test cases added successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/suites:
+    post:
+      summary: Add Test Suite
+      description: Adds a new test suite to the system. Requires edit permissions.
+      tags:
+        - Test Suites
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestSuiteEntity'
+      responses:
+        201:
+          description: Test suite added successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/suites/{id}:
+    put:
+      summary: Update Test Suite
+      description: Updates details of an existing test suite. Requires edit permissions.
+      tags:
+        - Test Suites
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestSuiteEntity'
+      responses:
+        200:
+          description: Test suite updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test suite not found.
+
+    delete:
+      summary: Delete Test Suite
+      description: Deletes a test suite from the system. Requires edit permissions.
+      tags:
+        - Test Suites
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Test suite deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test suite not found.
+
+  /protected/{project_code}/suites/bulk:
+    put:
+      summary: Bulk Update Test Suites
+      description: Updates multiple test suites at once for a specific project. Requires edit permissions.
+      tags:
+        - Test Suites
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            $ref: '#/definitions/UpdateTestSuiteBulkRequest'
+      responses:
+        200:
+          description: Test suites updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/{project_code}/plans:
+    get:
+      summary: Get Test Plans
+      description: Retrieves a list of test plans for a specific project.
+      tags:
+        - Test Plans
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: List of test plans.
+          schema:
+            type: object
+            $ref: '#/definitions/TestPlanResponse'
+        401:
+          description: Unauthorized access.
+
+  /protected/plans/{id}:
+    get:
+      summary: Get Test Plan by ID
+      description: Retrieves a specific test plan by its ID.
+      tags:
+        - Test Plans
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Test plan details.
+          schema:
+            $ref: '#/definitions/TestPlanEntity'
+        401:
+          description: Unauthorized access.
+        404:
+          description: Test plan not found.
+
+    put:
+      summary: Update Test Plan
+      description: Updates details of an existing test plan.
+      tags:
+        - Test Plans
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestPlan'
+      responses:
+        200:
+          description: Test plan updated successfully.
+        401:
+          description: Unauthorized access.
+        404:
+          description: Test plan not found.
+
+    delete:
+      summary: Delete Test Plan
+      description: Deletes a test plan from the system. Requires edit permissions.
+      tags:
+        - Test Plans
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Test plan deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test plan not found.
+
+  /protected/plans:
+    post:
+      summary: Add Test Plan
+      description: Adds a new test plan to the system. Requires edit permissions.
+      tags:
+        - Test Plans
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestPlan'
+      responses:
+        201:
+          description: Test plan added successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/{project_code}/{test_plan_id}/runs:
+    get:
+      summary: Get Test Runs
+      description: Retrieves a list of test runs for a specific test plan in a project.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+        - name: test_plan_id
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: List of test runs.
+          schema:
+            type: object
+            $ref: '#/definitions/TestRunsResponse'
+        401:
+          description: Unauthorized access.
+
+  /protected/runs/{id}:
+    get:
+      summary: Get Test Run Cases
+      description: Retrieves test cases for a specific test run.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Test run case details.
+          schema:
+            type: object
+            $ref: '#/definitions/TestRunCaseResponse'
+        401:
+          description: Unauthorized access.
+        404:
+          description: Test run not found.
+    put:
+      summary: Update Test Run
+      description: Updates an existing test run. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestRun'
+      responses:
+        200:
+          description: Test run updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test run not found.
+    delete:
+      summary: Delete Test Run
+      description: Deletes a specific test run. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Test run deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test run not found.
+
+  /protected/runs/cases/{id}:
+    get:
+      summary: Get Specific Test Run Case
+      description: Retrieves details of a specific test run case.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Specific test run case details.
+          schema:
+            $ref: '#/definitions/TestRunCase'
+        401:
+          description: Unauthorized access.
+        404:
+          description: Test run case not found.
+    put:
+      summary: Update Test Run Case
+      description: Updates a specific test run case. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestRunCase'
+      responses:
+        200:
+          description: Test run case updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test run case not found.
+    delete:
+      summary: Delete Test Run Case
+      description: Deletes a specific test run case. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Test run case deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Test run case not found.
+
+  /protected/runs:
+    post:
+      summary: Create Test Run
+      description: Creates a new test run. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestRun'
+      responses:
+        201:
+          description: New test run created.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/runs/cases:
+    post:
+      summary: Add Test Run Case
+      description: Adds a new case to a test run. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestRunCase'
+      responses:
+        201:
+          description: New test run case added.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/runs/cases/bulk:
+    post:
+      summary: Bulk Add Test Run Cases
+      description: Adds multiple test run cases at once. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            $ref: '#/definitions/NewTestRunCaseBulkRequest'
+      responses:
+        201:
+          description: Test run cases added in bulk.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/runs/cases/comments:
+    post:
+      summary: Add Comment to Test Run Case
+      description: Adds a comment to a specific test run case. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestRunCaseComment'
+      responses:
+        201:
+          description: Comment added to the test run case.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+  /protected/runs/cases/comments/{id}:
+    put:
+      summary: Update Comment on Test Run Case
+      description: Updates a comment on a specific test run case. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewTestRunCaseComment'
+      responses:
+        200:
+          description: Comment on test run case updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Comment on test run case not found.
+    delete:
+      summary: Delete Comment from Test Run Case
+      description: Deletes a comment from a specific test run case. Requires edit permissions.
+      tags:
+        - Test Runs
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Comment deleted from the test run case.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Comment on test run case not found.
+
+
+  /protected/{project_code}/milestones:
+    get:
+      summary: Get Milestones
+      description: Retrieves a list of milestones for a specific project.
+      tags:
+        - Milestones
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: project_code
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: List of milestones.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/MilestoneResponse'
+        401:
+          description: Unauthorized access.
+
+  /protected/milestones/{id}:
+    get:
+      summary: Get Milestone by ID
+      description: Retrieves a specific milestone by its ID.
+      tags:
+        - Milestones
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Milestone details.
+          schema:
+            $ref: '#/definitions/MilestoneEntity'
+        401:
+          description: Unauthorized access.
+        404:
+          description: Milestone not found.
+
+    put:
+      summary: Update Milestone
+      description: Updates details of an existing milestone. Requires edit permissions.
+      tags:
+        - Milestones
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewMilestone'
+      responses:
+        200:
+          description: Milestone updated successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Milestone not found.
+
+    delete:
+      summary: Delete Milestone
+      description: Deletes a milestone from the system. Requires edit permissions.
+      tags:
+        - Milestones
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        204:
+          description: Milestone deleted successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+        404:
+          description: Milestone not found.
+
+  /protected/milestones:
+    post:
+      summary: Add Milestone
+      description: Adds a new milestone to the system. Requires edit permissions.
+      tags:
+        - Milestones
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewMilestone'
+      responses:
+        201:
+          description: Milestone added successfully.
+        401:
+          description: Unauthorized access.
+        403:
+          description: Forbidden - Insufficient permissions.
+
+definitions:
+  Login:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+        format: email
+      password:
+        type: string
+
+  TokenResponse:
+    type: object
+    properties:
+      token:
+        type: string
+      user:
+        type: object
+        properties:
+          id:
+            type: integer
+            format: int64
+          name:
+            type: string
+          language:
+            type: string
+          permissions:
+            type: array
+            items:
+              type: string
+
+  StatusEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      color:
+        type: string
+
+  StatusesResponse:
+    type: object
+    properties:
+      default_id:
+        type: integer
+        format: int64
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/StatusEntity'
+
+  RoleEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      description:
+        type: string
+
+  RolesResponse:
+    type: object
+    properties:
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/RoleEntity'
+
+  PermissionEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+
+  MemberForAdminEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      email:
+        type: string
+      role:
+        type: object
+        $ref: '#/definitions/RoleEntity'
+      permissions:
+        type: array
+        items:
+          $ref: '#/definitions/PermissionEntity'
+
+  NewMemberForAdminEntity:
+    type: object
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+      role_id:
+        type: integer
+        format: int64
+      status:
+        type: string
+        enum:
+          - Active
+          - Inactive
+      language:
+        type: string
+        enum:
+          - en
+          - ja
+
+  UpdateMemberForAdminEntity:
+    type: object
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+      role_id:
+        type: integer
+        format: int64
+      status:
+        type: string
+        enum:
+          - Active
+          - Inactive
+      language:
+        type: string
+        enum:
+          - en
+          - ja
+      password:
+        type: string
+
+  MemberForAdminResponse:
+    type: object
+    properties:
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/MemberForAdminEntity'
+
+  MemberEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+
+  MemberResponse:
+    type: object
+    properties:
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/MemberEntity'
+
+  ProjectEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      code:
+        type: string
+      description:
+        type: string
+
+  NewProjectEntity:
+    type: object
+    properties:
+      title:
+        type: string
+      code:
+        type: string
+      description:
+        type: string
+
+  ProjectResponse:
+    type: object
+    properties:
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/ProjectEntity'
+
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+
+  TestCase:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      content:
+        type: string
+      milestone:
+        type: object
+      created_by:
+        $ref: '#/definitions/User'
+      updated_by:
+        $ref: '#/definitions/User'
+
+  TestCaseEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      test_suites:
+        type: array
+        items:
+          $ref: '#/definitions/TestSuite'
+      test_cases:
+        type: array
+        items:
+          $ref: '#/definitions/TestCase'
+
+  NewTestCaseEntity:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      test_suite_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      content:
+        type: string
+      created_by_id:
+        type: integer
+        format: int64
+      updated_by_id:
+        type: integer
+        format: int64
+
+  UpdateTestCaseEntity:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      test_suite_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      content:
+        type: string
+      updated_by_id:
+        type: integer
+        format: int64
+
+  UpdateTestCaseBulkEntity:
+    type: object
+    properties:
+      test_case_id:
+        type: integer
+        format: int64
+      index:
+        type: number
+
+  UpdateTestCaseBulkRequest:
+    type: object
+    properties:
+      test_suite_id:
+        type: integer
+        format: int64
+      test_cases:
+        type: array
+        items:
+          $ref: '#/definitions/UpdateTestCaseBulkEntity'
+
+  NewTestCaseBulkRequest:
+    type: object
+    properties:
+      test_cases:
+        type: array
+        items:
+          $ref: '#/definitions/NewTestCaseEntity'
+  
+  UpdateTestSuiteBulkEntity:
+    type: object
+    properties:
+      test_suite_id:
+        type: integer
+        format: int64
+      index:
+        type: number
+        
+  UpdateTestSuiteBulkRequest:
+    type: object
+    properties:
+      parent_id:
+        type: integer
+        format: int64
+      test_suites:
+        type: array
+        items:
+          $ref: '#/definitions/UpdateTestSuiteBulkEntity'
+
+  NewTestSuiteEntity:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      parent_id:
+        type: integer
+        format: int64
+      name:
+        type: string
+
+  Folder:
+    type: object
+    properties:
+      key:
+        type: integer
+        format: int64
+      title:
+        type: string
+      children:
+        type: array
+        items:
+          $ref: '#/definitions/Folder'
+
+  TestCaseResponse:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/TestCaseEntity'
+      folders:
+        type: array
+        items:
+          $ref: '#/definitions/Folder'
+
+  TestSuite:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      test_suites:
+        type: array
+        items:
+          $ref: '#/definitions/TestSuite'
+      test_cases:
+        type: array
+        items:
+          $ref: '#/definitions/TestCase'
+
+  TestPlanEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      project_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      status:
+        type: string
+      started_at:
+        type: string
+        format: date-time
+        description: "The start date and time in the format 'YYYY-MM-DD HH:mm'."
+      completed_at:
+        type: string
+        format: date-time
+        description: "The completion date and time in the format 'YYYY-MM-DD HH:mm'."
+      created_by:
+        $ref: '#/definitions/User'
+      updated_by:
+        $ref: '#/definitions/User'
+
+  TestPlanResponse:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/TestPlanEntity'
+
+  NewTestPlan:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      status:
+        type: string
+        enum:
+          - NotExecuted
+          - InProcess
+          - Completed
+      started_at:
+        type: string
+        format: date-time
+        description: "The start date and time in the format 'YYYY-MM-DD HH:mm'."
+      completed_at:
+        type: string
+        format: date-time
+        description: "The completion date and time in the format 'YYYY-MM-DD HH:mm'."
+      created_by_id:
+        type: integer
+        format: int64
+      updated_by_id:
+        type: integer
+        format: int64
+
+  TestRunsResponse:
+    type: object
+    properties:
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/TestRunEntity'
+
+  TestRunEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      project_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      count:
+        type: number
+      status:
+        type: string
+      started_at:
+        type: string
+        format: date-time
+        description: "The start date and time in the format 'YYYY-MM-DD HH:mm'."
+      completed_at:
+        type: string
+        format: date-time
+        description: "The completion date and time in the format 'YYYY-MM-DD HH:mm'."
+      test_case_ids:
+        type: array
+        items:
+          type: integer
+          format: int64
+      created_by:
+        $ref: '#/definitions/User'
+      updated_by:
+        $ref: '#/definitions/User'
+
+  TestRunResponse:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/TestRunCaseEntity'
+      folders:
+        type: array
+        items:
+          $ref: '#/definitions/Folder'
+
+  TestRunCaseEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      test_suites:
+        type: array
+        items:
+          $ref: '#/definitions/TestSuite'
+      test_cases:
+        type: array
+        items:
+          $ref: '#/definitions/TestRunCase'
+
+  TestRunCaseResponse:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/TestCaseEntity'
+      folders:
+        type: array
+        items:
+          $ref: '#/definitions/Folder'
+
+  TestRunCase:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      test_case_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      content:
+        type: string
+      status:
+        type: object
+        $ref: '#/definitions/StatusEntity'
+      assigned_to:
+        type: object
+        $ref: '#/definitions/User'
+      comments:
+        type: array
+        items:
+          $ref: '#/definitions/TestRunCaseComment'
+
+  NewTestRun:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      test_plan_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      content:
+        type: string
+      started_at:
+        type: string
+        format: date-time
+        description: "The start date and time in the format 'YYYY-MM-DD HH:mm'."
+      completed_at:
+        type: string
+        format: date-time
+        description: "The completion date and time in the format 'YYYY-MM-DD HH:mm'."
+      created_by_id:
+        type: integer
+        format: int64
+      updated_by_id:
+        type: integer
+        format: int64
+
+  NewTestRunCase:
+    type: object
+    properties:
+      test_case_id:
+        type: integer
+        format: int64
+      test_run_id:
+        type: integer
+        format: int64
+      assigned_to_id:
+        type: integer
+        format: int64
+      status_id:
+        type: integer
+        format: int64
+
+  TestRunCaseComment:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      status:
+        type: object
+        $ref: '#/definitions/StatusEntity'
+      content:
+        type: string
+      created_by:
+        $ref: '#/definitions/User'
+      updated_by:
+        $ref: '#/definitions/User'
+
+  NewTestRunCaseComment:
+    type: object
+    properties:
+      test_run_case_id:
+        type: integer
+        format: int64
+      status_id:
+        type: integer
+        format: int64
+      content:
+        type: string
+      created_by_id:
+        type: integer
+        format: int64
+      updated_by_id:
+        type: integer
+        format: int64
+  
+  NewTestRunCaseBulkRequest:
+    type: object
+    properties:
+      test_case_ids:
+        type: array
+        items:
+          type: integer
+          format: int64
+      test_run_id:
+        type: integer
+        format: int64
+
+  MilestoneEntity:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+        format: date
+      status:
+        type: string
+        enum:
+          - Active
+          - Inactive
+      test_case_count:
+        type: number
+
+  MilestoneResponse:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      entities:
+        type: array
+        items:
+          $ref: '#/definitions/MilestoneEntity'
+
+  NewMilestone:
+    type: object
+    properties:
+      project_id:
+        type: integer
+        format: int64
+      title:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+        format: date
+      status:
+        type: string
+        enum:
+          - Active
+          - Inactive

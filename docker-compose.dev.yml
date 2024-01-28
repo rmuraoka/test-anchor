@@ -21,6 +21,16 @@ services:
     networks:
       - network
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: "swagger-ui"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./doc/swagger.yaml:/swagger.yaml
+    environment:
+      SWAGGER_JSON: /swagger.yaml
+
 volumes:
   db-data:
     driver: local

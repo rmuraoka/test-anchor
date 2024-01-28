@@ -48,6 +48,14 @@ This project utilizes the following environment variables. Please set these vari
 ## Usage
 Usage instructions will be updated in accordance with the progress of the project.
 
+### API Documentation
+
+Our project's API documentation is provided through Swagger. To test the API locally and view the documentation, please visit the following URL:
+
+- Swagger UI: [http://localhost:8080](http://localhost:8080)
+
+Details about how to use the API and information on the endpoints are available on the Swagger UI.
+
 ## How to Contribute
 TestAnchor is an open-source project and welcomes contributions from the community. For details on how to contribute, please refer to [CONTRIBUTING.md](/CONTRIBUTING.md).
 
