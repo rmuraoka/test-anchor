@@ -78,6 +78,7 @@ type TestRunCasesResponseData struct {
 	Status         string                  `json:"status"`
 	TestSuites     []TestRunCasesTestSuite `json:"entities"`
 	OnlyTestSuites []JSONOnlyTestSuite     `json:"folders"`
+	Charts         []Chart                 `json:"charts"`
 }
 
 type TestRunCase struct {

@@ -163,7 +163,7 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 	testRunID := uint(testRunIDInt)
 
 	var testRun = model.TestRun{}
-	preResult := h.DB.First(&testRun, testRunID)
+	preResult := h.DB.Preload("TestRunCases.Status").First(&testRun, testRunID)
 	if preResult.Error != nil {
 		if errors.Is(preResult.Error, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Test Run not found"})
@@ -264,6 +264,7 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 
 	jsonTestSuites := convertToTestRunCaseTestSuites(topLevelTestSuites, testSuiteMap, childTestSuitesMap)
 	jsonOnlyTestSuites := convertToJSONOnlyTestSuites(topLevelTestSuites, testSuiteHierarchyMap)
+	charts := aggregateStatusCounts([]model.TestRun{testRun})
 
 	responseData := util.TestRunCasesResponseData{
 		ProjectID:      testRun.ProjectID,
@@ -272,6 +273,7 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 		Status:         testRun.Status,
 		TestSuites:     jsonTestSuites,
 		OnlyTestSuites: jsonOnlyTestSuites,
+		Charts:         charts,
 	}
 
 	c.JSON(http.StatusOK, responseData)
