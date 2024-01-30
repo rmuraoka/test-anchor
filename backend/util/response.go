@@ -79,6 +79,7 @@ type TestRunCasesResponseData struct {
 	TestSuites     []TestRunCasesTestSuite `json:"entities"`
 	OnlyTestSuites []JSONOnlyTestSuite     `json:"folders"`
 	Charts         []Chart                 `json:"charts"`
+	Percentage     int                     `json:"percentage"`
 }
 
 type TestRunCase struct {
@@ -149,14 +150,15 @@ type TestPlan struct {
 }
 
 type TestPlanDetail struct {
-	ID        uint      `json:"id"`
-	ProjectID uint      `json:"project_id"`
-	Title     string    `json:"title"`
-	Status    string    `json:"status"`
-	Charts    []Chart   `json:"charts"`
-	TestRuns  []TestRun `json:"test_runs"`
-	CreatedBy User      `json:"created_by"`
-	UpdatedBy User      `json:"updated_by"`
+	ID         uint      `json:"id"`
+	ProjectID  uint      `json:"project_id"`
+	Title      string    `json:"title"`
+	Status     string    `json:"status"`
+	Charts     []Chart   `json:"charts"`
+	TestRuns   []TestRun `json:"test_runs"`
+	CreatedBy  User      `json:"created_by"`
+	UpdatedBy  User      `json:"updated_by"`
+	Percentage int       `json:"percentage"`
 }
 
 type TestRunsResponseData struct {

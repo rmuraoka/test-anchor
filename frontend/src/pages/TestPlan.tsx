@@ -172,6 +172,7 @@ const TestPlan: React.FC = () => {
     const [selectedCount, setSelectedCount] = useState(0);
     const isOverLimit = selectedCount > 10000;
     const [testPlanStatus, setTestPlanStatus] = useState<string>('');
+    const [percentage, setPercentage] = useState<number>(0);
 
     // APIからテストケースを取得
     const fetchTestRuns = async () => {
@@ -182,6 +183,7 @@ const TestPlan: React.FC = () => {
             setTestRun(data.test_runs)
             setTestPlanStatus(data.status);
             setCharts(data.charts)
+            setPercentage(data.percentage)
             setIsLoading(false);
         } catch (error) {
             console.error('Error fetching TestPlans:', error);
@@ -548,14 +550,18 @@ const TestPlan: React.FC = () => {
                     text: '',
                 },
             },
+            cutout: '70%',
         };
 
         return (
             <Container maxW="container.xl" py={10}>
                 <Box border="1px" borderColor="gray.200" borderRadius="md" p={4}>
                     <Flex justifyContent="center" alignItems="center" mb={4}>
-                        <Box width={"300px"} mr={3}>
+                        <Box position="relative" width={"300px"} mr={3}>
                             <Pie data={data} options={options}/>
+                            <Box position="absolute" top="50%" left="50%" transform="translate(-50%, -50%)">
+                                <Text fontSize="2xl" fontWeight="bold">{`${percentage}%`}</Text>
+                            </Box>
                         </Box>
                         <Box width={"10rem"}/>
                         <Flex direction="column" alignItems="flex-start">

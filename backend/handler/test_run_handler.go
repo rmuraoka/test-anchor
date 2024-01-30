@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"log"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -274,9 +275,30 @@ func (h *TestRunHandler) GetTestRunCases(c *gin.Context) {
 		TestSuites:     jsonTestSuites,
 		OnlyTestSuites: jsonOnlyTestSuites,
 		Charts:         charts,
+		Percentage:     calcPercentage([]model.TestRun{testRun}),
 	}
 
 	c.JSON(http.StatusOK, responseData)
+}
+
+func calcPercentage(testRuns []model.TestRun) int {
+	var testRunCaseCount = 0
+	var defaultCount = 0
+	for _, run := range testRuns {
+		testRunCaseCount += len(run.TestRunCases)
+		for _, testRunCase := range run.TestRunCases {
+			if testRunCase.Status.Default {
+				defaultCount++
+			}
+		}
+	}
+
+	if testRunCaseCount == 0 {
+		return 0
+	}
+
+	percentage := float64(testRunCaseCount-defaultCount) / float64(testRunCaseCount) * 100
+	return int(math.Round(percentage))
 }
 
 func hasTestCases(testSuiteID uint, testRunCaseMap map[uint][]model.TestRunCase, childTestSuitesMap map[uint][]model.TestSuite) bool {

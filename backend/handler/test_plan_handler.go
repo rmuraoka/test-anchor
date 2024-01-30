@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 )
 
@@ -153,33 +154,59 @@ func (h *TestPlanHandler) GetTestPlan(c *gin.Context) {
 			ID:   testPlan.UpdatedByID,
 			Name: testPlan.UpdatedBy.Name,
 		},
+		Percentage: calcPercentage(testPlan.TestRuns),
 	}
 
 	c.JSON(http.StatusOK, testPlanResponses)
 }
 
+type statusInfo struct {
+	ID    uint
+	Name  string
+	Color string
+	Count int
+}
+
 func aggregateStatusCounts(testRuns []model.TestRun) []util.Chart {
 	statusCounts := make(map[string]int)
-	statusColors := make(map[string]string) // ステータスの色を格納するためのマップ
+	statusColors := make(map[string]string)
+	statusIDs := make(map[string]uint)
 
 	for _, run := range testRuns {
 		for _, testRunCase := range run.TestRunCases {
 			status := testRunCase.Status.Name
-			color := testRunCase.Status.Color // ステータスから色を取得
+			color := testRunCase.Status.Color
+			id := testRunCase.Status.ID // ステータスからIDを取得
 			statusCounts[status]++
 			statusColors[status] = color
+			statusIDs[status] = id
 		}
 	}
 
-	charts := make([]util.Chart, 0)
+	var infos []statusInfo
 	for status, count := range statusCounts {
-		chart := util.Chart{
+		info := statusInfo{
+			ID:    statusIDs[status],
 			Name:  status,
 			Color: statusColors[status],
 			Count: count,
 		}
-		charts = append(charts, chart)
+		infos = append(infos, info)
 	}
+
+	sort.Slice(infos, func(i, j int) bool {
+		return infos[i].ID > infos[j].ID
+	})
+
+	charts := make([]util.Chart, len(infos))
+	for i, info := range infos {
+		charts[i] = util.Chart{
+			Name:  info.Name,
+			Color: info.Color,
+			Count: info.Count,
+		}
+	}
+
 	return charts
 }
 
