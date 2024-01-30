@@ -3,7 +3,7 @@ import {
     Box,
     Button,
     ButtonGroup,
-    ChakraProvider,
+    ChakraProvider, Code,
     Divider,
     Editable,
     EditableInput,
@@ -15,6 +15,7 @@ import {
     HStack,
     Icon,
     IconButton,
+    Image,
     Input,
     Link,
     ListItem,
@@ -35,7 +36,7 @@ import {
     Tbody,
     Td,
     Text,
-    Textarea,
+    Textarea, Th, Thead,
     Tr,
     UnorderedList,
     useDisclosure,
@@ -1506,7 +1507,7 @@ const CaseList: React.FC = () => {
                             </Modal>
                         </Box>
                     </Box>
-                    <Box w="30%" p={5} pt="6rem">
+                    <Box w="30%" p={5} pt="6rem" overflowY="auto">
                         {selectedTestCase && (
                             <VStack align="start">
                                 {editMode ? (
@@ -1575,14 +1576,10 @@ const CaseList: React.FC = () => {
                                             </Flex>
                                         </VStack>
                                         <ReactMarkdown remarkPlugins={[gfm]} components={{
-                                            h1: ({node, ...props}) => <Heading as="h1" size="xl" mt={6}
-                                                                               mb={4} {...props} />,
-                                            h2: ({node, ...props}) => <Heading as="h2" size="lg" mt={5}
-                                                                               mb={3} {...props} />,
-                                            h3: ({node, ...props}) => <Heading as="h3" size="md" mt={4}
-                                                                               mb={2} {...props} />,
-                                            h4: ({node, ...props}) => <Heading as="h4" size="sm" mt={3}
-                                                                               mb={1} {...props} />,
+                                            h1: ({node, ...props}) => <Heading as="h1" size="xl" mt={6} mb={4} {...props} />,
+                                            h2: ({node, ...props}) => <Heading as="h2" size="lg" mt={5} mb={3} {...props} />,
+                                            h3: ({node, ...props}) => <Heading as="h3" size="md" mt={4} mb={2} {...props} />,
+                                            h4: ({node, ...props}) => <Heading as="h4" size="sm" mt={3} mb={1} {...props} />,
                                             p: ({node, ...props}) => <Text mt={2} mb={2} {...props} />,
                                             a: ({node, ...props}) => <Link color="teal.500" isExternal {...props} />,
                                             ul: ({node, ...props}) => <UnorderedList mt={2} mb={2} {...props} />,
@@ -1590,6 +1587,16 @@ const CaseList: React.FC = () => {
                                             li: ({node, ...props}) => <ListItem {...props} />,
                                             em: ({node, ...props}) => <Text as="em" {...props} />,
                                             strong: ({node, ...props}) => <Text as="strong" {...props} />,
+                                            blockquote: ({node, ...props}) => <Box as="blockquote" px={4} py={2} borderLeft="4px" borderColor="gray.200" {...props} />,
+                                            code: ({node, ...props}) => <Code p={2} {...props} />,
+                                            pre: ({node, ...props}) => <Box as="pre" p={4} bg="gray.100" borderRadius="md" {...props} />,
+                                            img: ({node, ...props}) => <Image my={4} {...props} />,
+                                            table: ({node, ...props}) => <Table variant="simple" size="sm" {...props} />,
+                                            th: ({node, ...props}) => <Th {...props} />,
+                                            td: ({node, ...props}) => <Td {...props} />,
+                                            tr: ({node, ...props}) => <Tr {...props} />,
+                                            thead: ({node, ...props}) => <Thead {...props} />,
+                                            tbody: ({node, ...props}) => <Tbody {...props} />,
                                         }}>
                                             {selectedTestCase?.content}
                                         </ReactMarkdown>
