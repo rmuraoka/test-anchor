@@ -1055,7 +1055,7 @@ const CaseList: React.FC = () => {
                           submitOnBlur={false}
                           id={'testSuite' + testSuiteId.toString()}
                           onSubmit={(newTitle) => handleUpdateTestSuiteTitle(newTitle, testSuiteId)}>
-                    <EditablePreview fontSize="lg" fontWeight="bold"/>
+                    <EditablePreview fontSize="md" fontWeight="bold"/>
                     <EditableInput mr={2} onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                             e.preventDefault();
@@ -1077,7 +1077,7 @@ const CaseList: React.FC = () => {
                                                                  onDeleteSuite
                                                              }) => {
         return (
-            <Flex justifyContent="space-between" alignItems="center" mb={4}>
+            <Flex justifyContent="space-between" alignItems="center" mb={2}>
                 <Flex alignItems="center">
                     <Icon as={SlFolder} mr={2}/>
                     <TestSuiteHeaderTitle title={title} testSuiteId={testSuiteId}/>

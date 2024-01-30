@@ -121,6 +121,7 @@ const RunCaseList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [members, setMembers] = useState<User[]>([]);
     const [charts, setCharts] = useState<Chart[]>([]);
+    const [percentage, setPercentage] = useState<number>(0);
 
     const fetchTestCases = async () => {
         try {
@@ -132,6 +133,7 @@ const RunCaseList: React.FC = () => {
             setTestSuites(data.entities);
             setOnlyTestSuites(data.folders)
             setCharts(data.charts);
+            setPercentage(data.percentage)
         } catch (error) {
             console.error('Error fetching TestCases:', error);
         }
@@ -477,14 +479,18 @@ const RunCaseList: React.FC = () => {
                     text: '',
                 },
             },
+            cutout: '70%',
         };
 
         return (
             <Container maxW="container.xl" py={3}>
                 <Box borderColor="gray.200" borderRadius="md">
-                    <Flex direction="column" justifyContent="center" alignItems="center">
-                        <Box width={"200px"}>
+                    <Flex direction="column" justifyContent="center" alignItems="center" position="relative">
+                        <Box width={"150px"}>
                             <Pie data={data} options={options}/>
+                            <Box position="absolute" top="50%" left="50%" transform="translate(-50%, -50%)">
+                                <Text fontSize="lg" fontWeight="bold">{`${percentage}%`}</Text>
+                            </Box>
                         </Box>
                     </Flex>
                 </Box>
@@ -554,13 +560,13 @@ const RunCaseList: React.FC = () => {
 
     const TestSuiteHeader: React.FC<TestSuiteHeaderProps> = ({title, testSuiteId}) => {
         return (
-            <Flex justifyContent="space-between" alignItems="center" mb={4}>
+            <Flex justifyContent="space-between" alignItems="center" mb={2}>
                 <Flex
                     alignItems="center"
                     id={'testSuite'+testSuiteId.toString()}
                 >
                     <Icon as={SlFolder} mr={2}/>
-                    <Text fontSize="lg" fontWeight="bold">{title}</Text>
+                    <Text fontSize="md" fontWeight="bold">{title}</Text>
                 </Flex>
             </Flex>
         );
@@ -640,7 +646,7 @@ const RunCaseList: React.FC = () => {
                         onChange={handleSearchChange}
                         mb={4}
                     />
-                    <Box height="50%" overflowY="auto">
+                    <Box height="55%" overflowY="auto">
                         <Tree
                             showLine
                             defaultExpandAll
